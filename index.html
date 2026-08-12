@@ -178,7 +178,7 @@
 
             <!-- SECTION: DASHBOARD -->
             <div id="dashboard-section" class="hidden space-y-6">
-                <!-- Dashboard content remains the same as before -->
+                <!-- Dashboard Filters -->
                 <div class="flex flex-col sm:flex-row justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-slate-100">
                     <h2 class="text-xl font-bold text-slate-800"><i class="fas fa-chart-line text-blue-500 mr-2"></i> Papan Pemuka Analisis</h2>
                     <div class="mt-4 sm:mt-0 flex items-center gap-3">
@@ -195,6 +195,7 @@
                     </div>
                 </div>
 
+                <!-- KPI Metrics -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="bg-white rounded-lg p-6 shadow-sm border-l-4 border-blue-500">
                         <span class="text-sm font-bold text-slate-500 mb-1 block">Jumlah Jam Bekerja (Seminggu)</span>
@@ -211,6 +212,7 @@
                     </div>
                 </div>
 
+                <!-- Charts Row 1 -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="bg-white rounded-lg shadow-sm border border-slate-100 p-4 h-80">
                         <h3 class="text-sm font-bold text-slate-700 text-center mb-2">Top 10 Portfolio Paling Membebankan (Jam)</h3>
@@ -226,6 +228,7 @@
                     </div>
                 </div>
 
+                <!-- Charts Row 2 -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="bg-white rounded-lg shadow-sm border border-slate-100 p-4 h-80">
                         <h3 class="text-sm font-bold text-slate-700 mb-2">Kekerapan Pelaksanaan Projek</h3>
@@ -237,8 +240,30 @@
                     </div>
                 </div>
 
+                <!-- Charts Row 3 (New Actionable Tables) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-lg shadow-sm border border-slate-100 p-4 w-full overflow-x-auto">
+                        <h3 class="text-sm font-bold text-slate-700 mb-2 text-red-600"><i class="fas fa-exclamation-circle mr-1"></i> Portfolio Beban Tinggi & Jam/Minggu</h3>
+                        <div id="table_beban_tinggi" class="w-full min-h-[150px] flex justify-center items-center">
+                            <div class="loader"></div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-sm border border-slate-100 p-4 w-full overflow-x-auto">
+                        <h3 class="text-sm font-bold text-slate-700 mb-2 text-orange-600"><i class="fas fa-exchange-alt mr-1"></i> Cadangan Serah Tugas Ke Agensi Lain</h3>
+                        <div id="table_serah_tugas" class="w-full min-h-[150px] flex justify-center items-center">
+                            <div class="loader"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Table & CSV Export -->
                 <div class="bg-white rounded-lg shadow-sm border border-slate-100 p-4 w-full overflow-x-auto">
-                    <h3 class="text-base font-bold text-slate-700 mb-4">Senarai Lengkap Data</h3>
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-base font-bold text-slate-700">Senarai Lengkap Data</h3>
+                        <button onclick="downloadCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-md text-sm font-semibold transition-colors flex items-center shadow-sm">
+                            <i class="fas fa-file-csv mr-2"></i> Muat Turun CSV
+                        </button>
+                    </div>
                     <div id="table_div" class="w-full min-h-[200px] flex justify-center items-center">
                         <div class="loader text-blue-500 mx-auto"></div>
                     </div>
@@ -253,7 +278,7 @@
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, serverTimestamp, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // GANTIKAN DENGAN CONFIG FIREBASE ANDA
+        // Your Exact Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyDS_zr-h8GZlBGRqBdsu-yAlg_h_suwX8Q",
             authDomain: "analysis-beban-kerja.firebaseapp.com",
@@ -269,7 +294,7 @@
         let formCount = 0;
         let isChartsLoaded = false;
         let currentUser = null;
-        let editingDocId = null; // Track if we are editing an existing record
+        let editingDocId = null;
 
         function showMessage(msg, isError = false) {
             const div = document.createElement('div');
@@ -296,17 +321,29 @@
             });
 
             // Authentication Listeners
-            document.getElementById('btn-login').addEventListener('click', handleLogin);
-            document.getElementById('btn-register').addEventListener('click', handleRegister);
-            document.getElementById('btn-logout').addEventListener('click', () => signOut(auth));
+            const btnLogin = document.getElementById('btn-login');
+            if (btnLogin) btnLogin.addEventListener('click', handleLogin);
+            
+            const btnRegister = document.getElementById('btn-register');
+            if (btnRegister) btnRegister.addEventListener('click', handleRegister);
+            
+            const btnLogout = document.getElementById('btn-logout');
+            if (btnLogout) btnLogout.addEventListener('click', () => signOut(auth));
 
             // Form & UI Listeners
-            document.getElementById('add-portfolio-btn').addEventListener('click', () => generatePortfolioForm());
-            document.getElementById('beban-form').addEventListener('submit', handleFormSubmit);
-            document.getElementById('filter-unit').addEventListener('change', (e) => {
+            const btnAdd = document.getElementById('add-portfolio-btn');
+            if (btnAdd) btnAdd.addEventListener('click', () => generatePortfolioForm());
+            
+            const frmSubmit = document.getElementById('beban-form');
+            if (frmSubmit) frmSubmit.addEventListener('submit', handleFormSubmit);
+            
+            const selFilter = document.getElementById('filter-unit');
+            if (selFilter) selFilter.addEventListener('change', (e) => {
                 if (isChartsLoaded) processData(globalData, e.target.value);
             });
-            document.getElementById('btn-cancel-edit').addEventListener('click', cancelEditMode);
+            
+            const btnCancel = document.getElementById('btn-cancel-edit');
+            if (btnCancel) btnCancel.addEventListener('click', cancelEditMode);
 
             // Listen for Login/Logout state changes
             onAuthStateChanged(auth, (user) => {
@@ -328,7 +365,6 @@
                     
                     startDatabaseListener();
                     
-                    // Reset form and add one initial empty block if not editing
                     if (!editingDocId) {
                         document.getElementById('portfolio-container').innerHTML = '';
                         formCount = 0;
@@ -381,6 +417,7 @@
 
         // --- DATABASE FUNCTIONS ---
         function startDatabaseListener() {
+            // Using your standard Firestore collection
             const q = query(collection(db, "portfolios")); 
             onSnapshot(q, (snapshot) => {
                 globalData = [];
@@ -400,9 +437,11 @@
         function renderMyPortfolios() {
             const tbody = document.getElementById('my-portfolios-table');
             const emptyState = document.getElementById('mydata-empty');
+            if(!tbody) return;
+            
             tbody.innerHTML = '';
             
-            // Filter records matching logged-in user's UID
+            // Only show data matching current user
             const myData = globalData.filter(d => d.uid === currentUser.uid);
 
             if (myData.length === 0) {
@@ -415,7 +454,7 @@
                         <td class="p-3 border-b border-slate-100 font-medium text-slate-800">${d.nama_projek || '-'}</td>
                         <td class="p-3 border-b border-slate-100">${d.kekerapan || '-'}</td>
                         <td class="p-3 border-b border-slate-100">${d.jam_seminggu || 0}</td>
-                        <td class="p-3 border-b border-slate-100 text-center">
+                        <td class="p-3 border-b border-slate-100 text-center whitespace-nowrap">
                             <button onclick="editMyData('${d.id}')" class="text-blue-500 hover:text-blue-700 mx-2" title="Edit"><i class="fas fa-edit"></i></button>
                             <button onclick="deleteMyData('${d.id}')" class="text-red-500 hover:text-red-700 mx-2" title="Padam"><i class="fas fa-trash-alt"></i></button>
                         </td>
@@ -440,18 +479,18 @@
             const record = globalData.find(d => d.id === docId);
             if (!record) return;
 
-            editingDocId = docId; // Set active edit mode
+            editingDocId = docId;
             
-            // Set User Info
+            // Populate generic user info
             document.getElementById('nama').value = record.nama || '';
             document.getElementById('unit').value = record.unit || '';
 
-            // Clear container and create EXACTLY ONE form block
+            // Render just 1 form filled with this data
             document.getElementById('portfolio-container').innerHTML = '';
             formCount = 0;
             generatePortfolioForm(record); 
 
-            // UI Changes for Edit Mode
+            // Alter UI for edit mode
             document.getElementById('add-more-container').classList.add('hidden');
             document.getElementById('btn-cancel-edit').classList.remove('hidden');
             document.getElementById('form-title').innerText = "Mengedit Portfolio";
@@ -464,7 +503,7 @@
         function cancelEditMode() {
             editingDocId = null;
             document.getElementById('beban-form').reset();
-            document.getElementById('email').value = currentUser.email; // restore email
+            document.getElementById('email').value = currentUser.email; 
             document.getElementById('portfolio-container').innerHTML = '';
             formCount = 0;
             generatePortfolioForm();
@@ -476,7 +515,6 @@
             document.getElementById('submit-btn').innerHTML = '<i class="fas fa-paper-plane mr-2"></i> Simpan / Hantar Maklumat';
         }
 
-        // Generate Form HTML (can auto-fill if record data is provided)
         function generatePortfolioForm(data = null) {
             formCount++;
             const container = document.getElementById('portfolio-container');
@@ -588,14 +626,14 @@
 
             try {
                 const email = currentUser.email;
-                const uid = currentUser.uid; // Link data to user
+                const uid = currentUser.uid; 
                 const nama = document.getElementById('nama').value;
                 const unit = document.getElementById('unit').value;
                 
                 const portfolios = document.querySelectorAll('.portfolio-section');
                 
                 if (editingDocId) {
-                    // Update single document
+                    // Update single edited document
                     const section = portfolios[0];
                     const dataObj = {
                         nama: nama,
@@ -617,7 +655,7 @@
                     cancelEditMode();
                     switchTab('mydata');
                 } else {
-                    // Create new document(s)
+                    // Create new documents (one for each portfolio added)
                     const batchPromises = [];
                     portfolios.forEach((section) => {
                         const dataObj = {
@@ -687,6 +725,7 @@
             document.getElementById('kpi-total-hours').innerText = totalHours.toFixed(1);
             document.getElementById('kpi-high-burden').innerText = highBurdenCount;
             
+            // Workload calculation
             const staffCount = staffNames.size > 0 ? staffNames.size : 1; 
             const maxCapacity = staffCount * 40; 
             const workloadIndex = (totalHours / maxCapacity) * 100;
@@ -700,6 +739,12 @@
             drawChartTop5Staff(data);
             drawChartFrequency(data);
             drawChartPeakMonths(data);
+            
+            // Draw the two new Actionable Tables
+            drawTableBebanTinggi(data);
+            drawTableSerahTugas(data);
+            
+            // Draw Main Database Table
             drawTable(data);
         };
         
@@ -760,6 +805,51 @@
             new google.visualization.LineChart(el).draw(google.visualization.arrayToDataTable(chartData), { legend: 'none', colors: ['#f97316'], chartArea: { width: '85%', height: '70%' }, curveType: 'function' });
         }
 
+        // --- NEW ACTIONABLE TABLES ---
+        function drawTableBebanTinggi(data) {
+            const el = document.getElementById('table_beban_tinggi');
+            if (!el) return;
+            const filteredData = data.filter(d => d.beban_tinggi === 'Ya');
+            
+            if (filteredData.length === 0) {
+                el.innerHTML = '<p class="text-gray-400 text-center py-4">Tiada rekod beban tinggi bagi unit ini</p>';
+                return;
+            }
+            
+            const gData = new google.visualization.DataTable();
+            gData.addColumn('string', 'Portfolio'); 
+            gData.addColumn('string', 'Staf (Unit)'); 
+            gData.addColumn('number', 'Jam');
+            
+            filteredData.forEach(d => {
+                gData.addRow([d.nama_projek || '-', `${d.nama || '-'} (${d.unit || '-'})`, d.jam_seminggu || 0]);
+            });
+            
+            new google.visualization.Table(el).draw(gData, { showRowNumber: true, width: '100%', page: 'enable', pageSize: 5, cssClassNames: { headerRow: 'bg-red-50 text-red-700 font-bold', tableRow: 'text-sm' } });
+        }
+
+        function drawTableSerahTugas(data) {
+            const el = document.getElementById('table_serah_tugas');
+            if (!el) return;
+            const filteredData = data.filter(d => d.serah_unit === 'Ya');
+            
+            if (filteredData.length === 0) {
+                el.innerHTML = '<p class="text-gray-400 text-center py-4">Tiada cadangan penyerahan tugas bagi unit ini</p>';
+                return;
+            }
+            
+            const gData = new google.visualization.DataTable();
+            gData.addColumn('string', 'Portfolio'); 
+            gData.addColumn('string', 'Unit Semasa'); 
+            gData.addColumn('string', 'Serah Kepada');
+            
+            filteredData.forEach(d => {
+                gData.addRow([d.nama_projek || '-', d.unit || '-', d.cadangan_serah || 'Tiada Maklumat']);
+            });
+            
+            new google.visualization.Table(el).draw(gData, { showRowNumber: true, width: '100%', page: 'enable', pageSize: 5, cssClassNames: { headerRow: 'bg-orange-50 text-orange-700 font-bold', tableRow: 'text-sm' } });
+        }
+
         function drawTable(data) {
             const el = document.getElementById('table_div');
             if (data.length === 0) return el.innerHTML = '<p class="text-gray-400 text-center py-4">Tiada Rekod Semasa</p>';
@@ -768,6 +858,73 @@
             data.forEach(d => gData.addRow([d.nama || '-', d.unit || '-', d.nama_projek || '-', d.jam_seminggu || 0, d.beban_tinggi || '-']));
             new google.visualization.Table(el).draw(gData, { showRowNumber: true, width: '100%', page: 'enable', pageSize: 10, cssClassNames: { headerRow: 'bg-slate-100 font-bold', tableRow: 'text-sm' } });
         }
+
+        // --- CSV EXPORT FUNCTION ---
+        window.downloadCSV = function() {
+            if (!globalData || globalData.length === 0) {
+                showMessage("Tiada data untuk dimuat turun.", true);
+                return;
+            }
+
+            const filterVal = document.getElementById('filter-unit')?.value || '';
+            const dataToExport = filterVal === '' ? globalData : globalData.filter(d => d.unit === filterVal);
+
+            if (dataToExport.length === 0) {
+                showMessage("Tiada data ditemui untuk saringan unit ini.", true);
+                return;
+            }
+
+            // CSV Headers
+            const headers = [
+                "Nama", "Email", "Unit", "Nama Portfolio", "Tanggungjawab",
+                "Impak", "Kekerapan", "Jam Seminggu", "Bulan Sibuk",
+                "Jumlah Staf", "Beban Tinggi", "Penglibatan Agensi",
+                "Serah Unit", "Cadangan Serah", "Tarikh Hantar"
+            ];
+
+            let csvContent = headers.join(",") + "\n";
+
+            // Helper to prevent commas inside cells from breaking columns
+            const escapeCSV = (str) => {
+                if (str === null || str === undefined || str === '') return '""';
+                const s = String(str).replace(/"/g, '""'); 
+                return `"${s}"`; 
+            };
+
+            dataToExport.forEach(d => {
+                const row = [
+                    escapeCSV(d.nama),
+                    escapeCSV(d.email),
+                    escapeCSV(d.unit),
+                    escapeCSV(d.nama_projek),
+                    escapeCSV(Array.isArray(d.tanggungjawab) ? d.tanggungjawab.join(" ; ") : d.tanggungjawab),
+                    escapeCSV(Array.isArray(d.impak) ? d.impak.join(" ; ") : d.impak),
+                    escapeCSV(d.kekerapan),
+                    escapeCSV(d.jam_seminggu),
+                    escapeCSV(Array.isArray(d.bulan_sibuk) ? d.bulan_sibuk.join(" ; ") : d.bulan_sibuk),
+                    escapeCSV(d.jumlah_staf),
+                    escapeCSV(d.beban_tinggi),
+                    escapeCSV(d.penglibatan_agensi),
+                    escapeCSV(d.serah_unit),
+                    escapeCSV(d.cadangan_serah),
+                    escapeCSV(d.timestamp ? new Date(d.timestamp.toMillis()).toLocaleDateString('ms-MY') : '')
+                ];
+                csvContent += row.join(",") + "\n";
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            
+            const dateStr = new Date().toISOString().split('T')[0];
+            const filterName = filterVal === '' ? 'Semua_Unit' : filterVal.replace(/\s+/g, '_');
+            
+            link.setAttribute("href", url);
+            link.setAttribute("download", `Analisis_Beban_${filterName}_${dateStr}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
 
         document.addEventListener('DOMContentLoaded', initApp);
     </script>
