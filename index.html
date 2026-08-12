@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analisis Beban Kerja</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3b82f6; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="text-slate-800 pb-20">
+
+    <!-- TOP NAVIGATION -->
+    <nav class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-3">
+                    <div class="bg-blue-600 text-white p-2 rounded-lg shadow-sm">
+                        <i class="fas fa-chart-pie"></i>
+                    </div>
+                    <h1 class="text-xl font-bold text-slate-800 hidden sm:block">Analisis Portfolio & Beban Kerja</h1>
+                    <h1 class="text-xl font-bold text-slate-800 sm:hidden">Analisis Beban</h1>
+                </div>
+                <!-- User Info & Logout (Hidden by default) -->
+                <div id="user-nav" class="hidden flex items-center gap-4 text-sm font-medium text-slate-600">
+                    <span id="user-display-email" class="hidden md:inline-block bg-slate-100 px-3 py-1 rounded-full"></span>
+                    <button id="btn-logout" class="text-red-500 hover:text-red-700 flex items-center transition-colors">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Log Keluar
+                    </button>
+                </div>
+            </div>
+            
+            <!-- App Tabs (Hidden until login) -->
+            <div id="app-tabs" class="hidden flex space-x-6 border-t border-slate-100 overflow-x-auto">
+                <button onclick="switchTab('form')" id="tab-form" class="border-b-2 border-blue-500 text-blue-600 py-3 px-1 text-sm font-medium transition-colors whitespace-nowrap">
+                    <i class="fas fa-edit mr-2"></i>Borang Kajian
+                </button>
+                <button onclick="switchTab('mydata')" id="tab-mydata" class="border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-3 px-1 text-sm font-medium transition-colors whitespace-nowrap">
+                    <i class="fas fa-list mr-2"></i>Portfolio Saya
+                </button>
+                <button onclick="switchTab('dashboard')" id="tab-dashboard" class="border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-3 px-1 text-sm font-medium transition-colors whitespace-nowrap">
+                    <i class="fas fa-chart-line mr-2"></i>Papan Pemuka
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- SECTION: AUTHENTICATION (LOGIN/REGISTER) -->
+        <div id="auth-section" class="max-w-md mx-auto bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden mt-10">
+            <div class="bg-blue-600 px-6 py-6 text-center">
+                <i class="fas fa-user-lock text-4xl text-white mb-3"></i>
+                <h2 class="text-xl font-bold text-white">Log Masuk Staf</h2>
+                <p class="text-blue-100 text-sm mt-1">Sila log masuk untuk menghantar atau mengedit data.</p>
+            </div>
+            <form id="auth-form" class="p-6 space-y-5">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Alamat Emel</label>
+                    <input type="email" id="auth-email" required class="w-full rounded-md border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="cth: staf@moh.gov.my">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Kata Laluan</label>
+                    <input type="password" id="auth-password" required minlength="6" class="w-full rounded-md border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Minima 6 aksara">
+                </div>
+                <div class="pt-2 flex flex-col gap-3">
+                    <button type="button" id="btn-login" class="w-full bg-blue-600 text-white font-bold rounded-lg px-4 py-3 hover:bg-blue-700 transition-colors shadow-sm">
+                        Log Masuk
+                    </button>
+                    <div class="relative flex py-2 items-center">
+                        <div class="flex-grow border-t border-gray-300"></div>
+                        <span class="flex-shrink-0 mx-4 text-gray-400 text-sm">Atau</span>
+                        <div class="flex-grow border-t border-gray-300"></div>
+                    </div>
+                    <button type="button" id="btn-register" class="w-full bg-slate-100 text-slate-700 font-bold rounded-lg px-4 py-3 hover:bg-slate-200 transition-colors border border-slate-300">
+                        Daftar Akaun Baru
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- MAIN APP SECTIONS (Hidden until login) -->
+        <div id="app-sections" class="hidden">
+            
+            <!-- SECTION: FORM -->
+            <div id="form-section" class="max-w-3xl mx-auto bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="bg-blue-50 px-6 py-5 border-b border-blue-100 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-lg font-bold text-blue-800" id="form-title">Maklumat Staf & Unit</h2>
+                        <p class="text-sm text-blue-600 mt-1" id="form-subtitle">Lengkapkan maklumat, kemudian senaraikan portfolio anda.</p>
+                    </div>
+                    <!-- Cancel Edit Button (Hidden by default) -->
+                    <button type="button" id="btn-cancel-edit" class="hidden bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-2 rounded-md text-sm font-semibold transition-colors">
+                        Batal Edit
+                    </button>
+                </div>
+                <form id="beban-form" class="p-6">
+                    <!-- User Basic Info -->
+                    <div class="space-y-5 mb-8 bg-slate-50 p-5 rounded-lg border border-slate-200">
+                        <div class="hidden">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">1. Email <span class="text-red-500">*</span></label>
+                            <input type="email" id="email" class="w-full rounded-md border border-gray-300 px-4 py-2 bg-gray-100" readonly>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">2. Nama Penuh <span class="text-red-500">*</span></label>
+                            <input type="text" id="nama" required class="w-full rounded-md border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">3. Nama Unit <span class="text-red-500">*</span></label>
+                            <select id="unit" required class="w-full rounded-md border border-gray-300 px-4 py-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option value="">-- Sila Pilih Unit Anda --</option>
+                                <option value="Unit Survelan Klinikal">Unit Survelan Klinikal</option>
+                                <option value="Unit Pengurusan Risiko (Pesakit)">Unit Pengurusan Risiko (Pesakit)</option>
+                                <option value="Unit Pengurusan Risiko (Pekerjaan)">Unit Pengurusan Risiko (Pekerjaan)</option>
+                                <option value="Unit Kawalan Infeksi">Unit Kawalan Infeksi</option>
+                                <option value="Unit Pentadbiran">Unit Pentadbiran</option>
+                                <option value="Timbalan Pengarah">Timbalan Pengarah</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="portfolio-container" class="space-y-6">
+                        <!-- Portfolios injected via JS -->
+                    </div>
+
+                    <div class="mt-8 pt-6 border-t border-gray-200">
+                        <div id="add-more-container">
+                            <label class="block text-base font-bold text-gray-800 mb-3">15. Adakah anda ingin menambah SATU LAGI projek/aktiviti/portfolio?</label>
+                            <div class="flex flex-col sm:flex-row gap-4 mb-6">
+                                <button type="button" id="add-portfolio-btn" class="flex-1 border-2 border-dashed border-blue-300 bg-blue-50 rounded-lg p-4 text-center text-blue-600 hover:bg-blue-100 hover:border-blue-500 transition-colors font-medium">
+                                    <i class="fas fa-plus-circle mr-2"></i> YA, Tambah Portfolio Lagi
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" id="submit-btn" class="w-full bg-slate-800 text-white font-bold rounded-lg px-4 py-4 hover:bg-slate-900 shadow-md transition-colors flex justify-center items-center">
+                            <i class="fas fa-paper-plane mr-2"></i> Simpan / Hantar Maklumat
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- SECTION: MY PORTFOLIOS (Edit/Delete) -->
+            <div id="mydata-section" class="hidden max-w-5xl mx-auto">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="bg-emerald-50 px-6 py-5 border-b border-emerald-100 flex items-center gap-3">
+                        <div class="bg-emerald-500 text-white p-2 rounded-lg"><i class="fas fa-list-check"></i></div>
+                        <div>
+                            <h2 class="text-lg font-bold text-emerald-800">Senarai Portfolio Anda</h2>
+                            <p class="text-sm text-emerald-600">Anda hanya boleh melihat dan mengubah suai rekod yang dihantar oleh akaun anda.</p>
+                        </div>
+                    </div>
+                    <div class="p-6 overflow-x-auto">
+                        <table class="w-full text-left border-collapse min-w-[600px]">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200 text-sm text-slate-600">
+                                    <th class="p-3 font-semibold">Nama Portfolio</th>
+                                    <th class="p-3 font-semibold">Kekerapan</th>
+                                    <th class="p-3 font-semibold">Jam/Minggu</th>
+                                    <th class="p-3 font-semibold text-center">Tindakan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="my-portfolios-table" class="text-sm text-slate-700 divide-y divide-slate-100">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                        <div id="mydata-empty" class="hidden text-center py-8 text-slate-400 font-medium">
+                            <i class="fas fa-folder-open text-3xl mb-2"></i><br>Anda belum memasukkan sebarang data.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION: DASHBOARD -->
+            <div id="dashboard-section" class="hidden space-y-6">
+                <!-- Dashboard content remains the same as before -->
+                <div class="flex flex-col sm:flex-row justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-slate-100">
+                    <h2 class="text-xl font-bold text-slate-800"><i class="fas fa-chart-line text-blue-500 mr-2"></i> Papan Pemuka Analisis</h2>
+                    <div class="mt-4 sm:mt-0 flex items-center gap-3">
+                        <label class="text-sm font-semibold text-slate-700">Saring Unit:</label>
+                        <select id="filter-unit" class="rounded-md border border-gray-300 px-3 py-1.5 bg-gray-50 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="">-- Semua Unit --</option>
+                            <option value="Unit Survelan Klinikal">Unit Survelan Klinikal</option>
+                            <option value="Unit Pengurusan Risiko (Pesakit)">Unit Pengurusan Risiko (Pesakit)</option>
+                            <option value="Unit Pengurusan Risiko (Pekerjaan)">Unit Pengurusan Risiko (Pekerjaan)</option>
+                            <option value="Unit Kawalan Infeksi">Unit Kawalan Infeksi</option>
+                            <option value="Unit Pentadbiran">Unit Pentadbiran</option>
+                            <option value="Timbalan Pengarah">Timbalan Pengarah</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white rounded-lg p-6 shadow-sm border-l-4 border-blue-500">
+                        <span class="text-sm font-bold text-slate-500 mb-1 block">Jumlah Jam Bekerja (Seminggu)</span>
+                        <span class="text-3xl font-black text-slate-800" id="kpi-total-hours">0</span>
+                    </div>
+                    <div class="bg-white rounded-lg p-6 shadow-sm border-l-4 border-red-500">
+                        <span class="text-sm font-bold text-slate-500 mb-1 block">Portfolio Beban Tinggi</span>
+                        <span class="text-3xl font-black text-slate-800" id="kpi-high-burden">0</span>
+                    </div>
+                    <div class="bg-white rounded-lg p-6 shadow-sm border-l-4 border-orange-500 relative">
+                        <span class="text-sm font-bold text-slate-500 mb-1 block">Indeks Beban / Kapasiti Staf (%)</span>
+                        <span class="text-3xl font-black text-slate-800" id="kpi-workload-index">0%</span>
+                        <div class="absolute bottom-2 right-4 text-xs font-medium text-slate-400">100% = Had Optimum</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white rounded-lg shadow-sm border border-slate-100 p-4 h-80">
+                        <h3 class="text-sm font-bold text-slate-700 text-center mb-2">Top 10 Portfolio Paling Membebankan (Jam)</h3>
+                        <div id="chart_top10_portfolio" class="w-full h-full flex justify-center items-center"><div class="loader"></div></div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-sm border border-slate-100 p-4 h-80">
+                        <h3 class="text-sm font-bold text-slate-700 text-center mb-2">Top 5 Unit Paling Sibuk</h3>
+                        <div id="chart_top5_unit" class="w-full h-full flex justify-center items-center"><div class="loader"></div></div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-sm border border-slate-100 p-4 h-80">
+                        <h3 class="text-sm font-bold text-slate-700 text-center mb-2">Top 5 Staf Beban Tertinggi</h3>
+                        <div id="chart_top5_staff" class="w-full h-full flex justify-center items-center"><div class="loader"></div></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-lg shadow-sm border border-slate-100 p-4 h-80">
+                        <h3 class="text-sm font-bold text-slate-700 mb-2">Kekerapan Pelaksanaan Projek</h3>
+                        <div id="chart_frequency" class="w-full h-full flex justify-center items-center"><div class="loader"></div></div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-sm border border-slate-100 p-4 h-80">
+                        <h3 class="text-sm font-bold text-slate-700 mb-2">Trend Bulan Paling Sibuk</h3>
+                        <div id="chart_peak_months" class="w-full h-full flex justify-center items-center"><div class="loader"></div></div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-sm border border-slate-100 p-4 w-full overflow-x-auto">
+                    <h3 class="text-base font-bold text-slate-700 mb-4">Senarai Lengkap Data</h3>
+                    <div id="table_div" class="w-full min-h-[200px] flex justify-center items-center">
+                        <div class="loader text-blue-500 mx-auto"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, serverTimestamp, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // GANTIKAN DENGAN CONFIG FIREBASE ANDA
+        const firebaseConfig = {
+            apiKey: "AIzaSyDS_zr-h8GZlBGRqBdsu-yAlg_h_suwX8Q",
+            authDomain: "analysis-beban-kerja.firebaseapp.com",
+            projectId: "analysis-beban-kerja",
+            storageBucket: "analysis-beban-kerja.firebasestorage.app",
+            messagingSenderId: "1077211482462",
+            appId: "1:1077211482462:web:f26e4663732cbc2c16e7cf",
+            measurementId: "G-2891WGDXJX"
+        };
+        
+        let app, auth, db;
+        let globalData = [];
+        let formCount = 0;
+        let isChartsLoaded = false;
+        let currentUser = null;
+        let editingDocId = null; // Track if we are editing an existing record
+
+        function showMessage(msg, isError = false) {
+            const div = document.createElement('div');
+            div.className = `fixed bottom-4 right-4 p-4 rounded-lg shadow-lg text-white z-50 transition-all duration-500 transform translate-y-0 opacity-100 ${isError ? 'bg-red-600' : 'bg-emerald-600'}`;
+            div.innerHTML = `<i class="fas ${isError ? 'fa-exclamation-triangle' : 'fa-check-circle'} mr-2"></i> ${msg}`;
+            document.body.appendChild(div);
+            setTimeout(() => {
+                div.style.opacity = '0';
+                div.style.transform = 'translateY(20px)';
+                setTimeout(() => div.remove(), 500);
+            }, 4000);
+        }
+
+        async function initApp() {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+
+            // Load Google Charts
+            google.charts.load('current', {'packages':['corechart', 'table']});
+            google.charts.setOnLoadCallback(() => {
+                isChartsLoaded = true;
+                if (globalData.length > 0) processData(globalData, document.getElementById('filter-unit')?.value);
+            });
+
+            // Authentication Listeners
+            document.getElementById('btn-login').addEventListener('click', handleLogin);
+            document.getElementById('btn-register').addEventListener('click', handleRegister);
+            document.getElementById('btn-logout').addEventListener('click', () => signOut(auth));
+
+            // Form & UI Listeners
+            document.getElementById('add-portfolio-btn').addEventListener('click', () => generatePortfolioForm());
+            document.getElementById('beban-form').addEventListener('submit', handleFormSubmit);
+            document.getElementById('filter-unit').addEventListener('change', (e) => {
+                if (isChartsLoaded) processData(globalData, e.target.value);
+            });
+            document.getElementById('btn-cancel-edit').addEventListener('click', cancelEditMode);
+
+            // Listen for Login/Logout state changes
+            onAuthStateChanged(auth, (user) => {
+                const authSec = document.getElementById('auth-section');
+                const appSec = document.getElementById('app-sections');
+                const navTabs = document.getElementById('app-tabs');
+                const userNav = document.getElementById('user-nav');
+
+                if (user) {
+                    currentUser = user;
+                    document.getElementById('email').value = user.email;
+                    document.getElementById('user-display-email').innerText = user.email;
+                    
+                    authSec.classList.add('hidden');
+                    appSec.classList.remove('hidden');
+                    navTabs.classList.remove('hidden');
+                    userNav.classList.remove('hidden');
+                    userNav.classList.add('flex');
+                    
+                    startDatabaseListener();
+                    
+                    // Reset form and add one initial empty block if not editing
+                    if (!editingDocId) {
+                        document.getElementById('portfolio-container').innerHTML = '';
+                        formCount = 0;
+                        generatePortfolioForm();
+                    }
+                    switchTab('form');
+                } else {
+                    currentUser = null;
+                    authSec.classList.remove('hidden');
+                    appSec.classList.add('hidden');
+                    navTabs.classList.add('hidden');
+                    userNav.classList.add('hidden');
+                    userNav.classList.remove('flex');
+                }
+            });
+        }
+
+        // --- AUTHENTICATION FUNCTIONS ---
+        async function handleLogin() {
+            const e = document.getElementById('auth-email').value;
+            const p = document.getElementById('auth-password').value;
+            if(!e || !p) return showMessage("Sila masukkan emel dan kata laluan.", true);
+            try {
+                const btn = document.getElementById('btn-login');
+                btn.innerText = "Sila tunggu...";
+                await signInWithEmailAndPassword(auth, e, p);
+                showMessage("Berjaya log masuk!");
+                btn.innerText = "Log Masuk";
+            } catch (err) {
+                showMessage("Gagal log masuk. Periksa emel/kata laluan.", true);
+                document.getElementById('btn-login').innerText = "Log Masuk";
+            }
+        }
+
+        async function handleRegister() {
+            const e = document.getElementById('auth-email').value;
+            const p = document.getElementById('auth-password').value;
+            if(!e || p.length < 6) return showMessage("Emel diperlukan dan kata laluan min 6 aksara.", true);
+            try {
+                const btn = document.getElementById('btn-register');
+                btn.innerText = "Mendaftar...";
+                await createUserWithEmailAndPassword(auth, e, p);
+                showMessage("Akaun berjaya didaftarkan!");
+                btn.innerText = "Daftar Akaun Baru";
+            } catch (err) {
+                showMessage("Emel ini mungkin telah digunakan.", true);
+                document.getElementById('btn-register').innerText = "Daftar Akaun Baru";
+            }
+        }
+
+        // --- DATABASE FUNCTIONS ---
+        function startDatabaseListener() {
+            const q = query(collection(db, "portfolios")); 
+            onSnapshot(q, (snapshot) => {
+                globalData = [];
+                snapshot.forEach((doc) => {
+                    globalData.push({ id: doc.id, ...doc.data() });
+                });
+                
+                globalData.sort((a, b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
+
+                if (isChartsLoaded) {
+                    processData(globalData, document.getElementById('filter-unit').value);
+                }
+                renderMyPortfolios();
+            });
+        }
+
+        function renderMyPortfolios() {
+            const tbody = document.getElementById('my-portfolios-table');
+            const emptyState = document.getElementById('mydata-empty');
+            tbody.innerHTML = '';
+            
+            // Filter records matching logged-in user's UID
+            const myData = globalData.filter(d => d.uid === currentUser.uid);
+
+            if (myData.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                myData.forEach(d => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="p-3 border-b border-slate-100 font-medium text-slate-800">${d.nama_projek || '-'}</td>
+                        <td class="p-3 border-b border-slate-100">${d.kekerapan || '-'}</td>
+                        <td class="p-3 border-b border-slate-100">${d.jam_seminggu || 0}</td>
+                        <td class="p-3 border-b border-slate-100 text-center">
+                            <button onclick="editMyData('${d.id}')" class="text-blue-500 hover:text-blue-700 mx-2" title="Edit"><i class="fas fa-edit"></i></button>
+                            <button onclick="deleteMyData('${d.id}')" class="text-red-500 hover:text-red-700 mx-2" title="Padam"><i class="fas fa-trash-alt"></i></button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+
+        window.deleteMyData = async function(docId) {
+            if(confirm("Adakah anda pasti mahu memadam portfolio ini? Tindakan ini tidak boleh diundur.")) {
+                try {
+                    await deleteDoc(doc(db, "portfolios", docId));
+                    showMessage("Data berjaya dipadam.");
+                } catch (err) {
+                    showMessage("Ralat memadam data.", true);
+                }
+            }
+        }
+
+        window.editMyData = function(docId) {
+            const record = globalData.find(d => d.id === docId);
+            if (!record) return;
+
+            editingDocId = docId; // Set active edit mode
+            
+            // Set User Info
+            document.getElementById('nama').value = record.nama || '';
+            document.getElementById('unit').value = record.unit || '';
+
+            // Clear container and create EXACTLY ONE form block
+            document.getElementById('portfolio-container').innerHTML = '';
+            formCount = 0;
+            generatePortfolioForm(record); 
+
+            // UI Changes for Edit Mode
+            document.getElementById('add-more-container').classList.add('hidden');
+            document.getElementById('btn-cancel-edit').classList.remove('hidden');
+            document.getElementById('form-title').innerText = "Mengedit Portfolio";
+            document.getElementById('form-subtitle').innerText = "Kemas kini maklumat portfolio di bawah.";
+            document.getElementById('submit-btn').innerHTML = '<i class="fas fa-save mr-2"></i> Kemas Kini Maklumat';
+            
+            switchTab('form');
+        }
+
+        function cancelEditMode() {
+            editingDocId = null;
+            document.getElementById('beban-form').reset();
+            document.getElementById('email').value = currentUser.email; // restore email
+            document.getElementById('portfolio-container').innerHTML = '';
+            formCount = 0;
+            generatePortfolioForm();
+
+            document.getElementById('add-more-container').classList.remove('hidden');
+            document.getElementById('btn-cancel-edit').classList.add('hidden');
+            document.getElementById('form-title').innerText = "Maklumat Staf & Unit";
+            document.getElementById('form-subtitle').innerText = "Lengkapkan maklumat, kemudian senaraikan portfolio anda.";
+            document.getElementById('submit-btn').innerHTML = '<i class="fas fa-paper-plane mr-2"></i> Simpan / Hantar Maklumat';
+        }
+
+        // Generate Form HTML (can auto-fill if record data is provided)
+        function generatePortfolioForm(data = null) {
+            formCount++;
+            const container = document.getElementById('portfolio-container');
+            const div = document.createElement('div');
+            div.className = 'portfolio-section p-6 border border-blue-200 rounded-xl bg-white shadow-sm relative';
+            
+            const checksTanggungjawab = ['Merancang', 'Memimpin', 'Menyelaras', 'Memantau', 'Menganalisa', 'Menilai', 'Membuat keputusan', 'Mendokumentasi', 'Mengumpul data', 'Mengemaskini data'];
+            const checksImpak = ['Cawangan', 'Bahagian', 'Negeri', 'Negara', 'Luar Negara'];
+            const checksBulan = ['Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember', 'Tiada'];
+
+            div.innerHTML = `
+                <div class="flex justify-between items-center mb-5 border-b border-gray-200 pb-3">
+                    <h3 class="text-lg font-bold text-blue-800">Projek / Aktiviti / Portfolio ${editingDocId ? '' : `#${formCount}`}</h3>
+                    ${(formCount > 1 && !editingDocId) ? `<button type="button" class="text-red-500 hover:text-red-700 text-sm font-semibold px-2 py-1 bg-red-50 rounded" onclick="this.closest('.portfolio-section').remove()"><i class="fas fa-trash-alt mr-1"></i>Padam</button>` : ''}
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">4. Nama Projek / Aktiviti / Portfolio <span class="text-red-500">*</span></label>
+                        <input type="text" required class="portfolio-nama w-full rounded-md border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" value="${data?.nama_projek || ''}">
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">5. Tanggungjawab</label>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 text-sm bg-slate-50 p-4 rounded-md border border-gray-200">
+                            ${checksTanggungjawab.map(t => `<label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" value="${t}" class="portfolio-tanggungjawab rounded border-gray-300 text-blue-600" ${data?.tanggungjawab?.includes(t) ? 'checked' : ''}> <span class="text-gray-700">${t}</span></label>`).join('')}
+                        </div>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">6. Outcome / Impak</label>
+                        <div class="flex flex-wrap gap-4 text-sm bg-slate-50 p-4 rounded-md border border-gray-200">
+                            ${checksImpak.map(t => `<label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" value="${t}" class="portfolio-impak rounded border-gray-300 text-blue-600" ${data?.impak?.includes(t) ? 'checked' : ''}> <span class="text-gray-700">${t}</span></label>`).join('')}
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">7. Kekerapan <span class="text-red-500">*</span></label>
+                        <select required class="portfolio-kekerapan w-full rounded-md border border-gray-300 px-4 py-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="">-- Sila Pilih --</option>
+                            ${['Harian', 'Mingguan', 'Bulanan', 'Dwitahunan', 'Tahunan', 'Bermusim'].map(v => `<option value="${v}" ${data?.kekerapan === v ? 'selected' : ''}>${v}</option>`).join('')}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">9. Anggaran Jam Seminggu</label>
+                        <input type="number" min="0" step="0.5" class="portfolio-jam w-full rounded-md border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" value="${data?.jam_seminggu || ''}">
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">8. Bulan Paling Sibuk</label>
+                        <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 text-sm bg-slate-50 p-4 rounded-md border border-gray-200">
+                            ${checksBulan.map(b => `<label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" value="${b}" class="portfolio-bulan rounded border-gray-300 text-orange-500" ${data?.bulan_sibuk?.includes(b) ? 'checked' : ''}> <span class="text-gray-700">${b}</span></label>`).join('')}
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">10. Jumlah Staf Yang Terlibat</label>
+                        <select class="portfolio-staf w-full rounded-md border border-gray-300 px-4 py-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="">-- Pilih --</option>
+                            ${['1 orang', '2 orang', '3 orang', '4 orang', '5 orang atau lebih'].map(v => `<option value="${v}" ${data?.jumlah_staf === v ? 'selected' : ''}>${v}</option>`).join('')}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">11. Beban tinggi?</label>
+                        <select class="portfolio-beban w-full rounded-md border border-gray-300 px-4 py-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="">-- Pilih --</option>
+                            <option value="Ya" ${data?.beban_tinggi === 'Ya' ? 'selected' : ''}>Ya</option>
+                            <option value="Tidak" ${data?.beban_tinggi === 'Tidak' ? 'selected' : ''}>Tidak</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">12. Penglibatan Agensi lain?</label>
+                        <select class="portfolio-penglibatan w-full rounded-md border border-gray-300 px-4 py-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="">-- Pilih --</option>
+                            <option value="Ya" ${data?.penglibatan_agensi === 'Ya' ? 'selected' : ''}>Ya</option>
+                            <option value="Tidak" ${data?.penglibatan_agensi === 'Tidak' ? 'selected' : ''}>Tidak</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">13. Diserahkan kepada Unit Lain?</label>
+                        <select class="portfolio-serah w-full rounded-md border border-gray-300 px-4 py-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none" onchange="const t = this.closest('.portfolio-section').querySelector('.q14-container'); if(this.value === 'Ya'){ t.classList.remove('hidden'); } else { t.classList.add('hidden'); }">
+                            <option value="">-- Pilih --</option>
+                            <option value="Ya" ${data?.serah_unit === 'Ya' ? 'selected' : ''}>Ya</option>
+                            <option value="Tidak" ${data?.serah_unit === 'Tidak' ? 'selected' : ''}>Tidak</option>
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-2 q14-container ${data?.serah_unit === 'Ya' ? '' : 'hidden'}">
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">14. Jika Ya, cadangan serah kepada siapa?</label>
+                        <input type="text" class="portfolio-cadangan-serah w-full rounded-md border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" value="${data?.cadangan_serah || ''}">
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            if (!currentUser) return showMessage("Sila log masuk dahulu.", true);
+
+            const submitBtn = document.getElementById('submit-btn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Menyimpan...';
+
+            try {
+                const email = currentUser.email;
+                const uid = currentUser.uid; // Link data to user
+                const nama = document.getElementById('nama').value;
+                const unit = document.getElementById('unit').value;
+                
+                const portfolios = document.querySelectorAll('.portfolio-section');
+                
+                if (editingDocId) {
+                    // Update single document
+                    const section = portfolios[0];
+                    const dataObj = {
+                        nama: nama,
+                        unit: unit,
+                        nama_projek: section.querySelector('.portfolio-nama').value,
+                        tanggungjawab: Array.from(section.querySelectorAll('.portfolio-tanggungjawab:checked')).map(cb => cb.value),
+                        impak: Array.from(section.querySelectorAll('.portfolio-impak:checked')).map(cb => cb.value),
+                        kekerapan: section.querySelector('.portfolio-kekerapan').value,
+                        bulan_sibuk: Array.from(section.querySelectorAll('.portfolio-bulan:checked')).map(cb => cb.value),
+                        jam_seminggu: parseFloat(section.querySelector('.portfolio-jam').value) || 0,
+                        jumlah_staf: section.querySelector('.portfolio-staf').value,
+                        beban_tinggi: section.querySelector('.portfolio-beban').value,
+                        penglibatan_agensi: section.querySelector('.portfolio-penglibatan').value,
+                        serah_unit: section.querySelector('.portfolio-serah').value,
+                        cadangan_serah: section.querySelector('.portfolio-cadangan-serah').value
+                    };
+                    await updateDoc(doc(db, "portfolios", editingDocId), dataObj);
+                    showMessage("Rekod berjaya dikemaskini!");
+                    cancelEditMode();
+                    switchTab('mydata');
+                } else {
+                    // Create new document(s)
+                    const batchPromises = [];
+                    portfolios.forEach((section) => {
+                        const dataObj = {
+                            uid: uid,
+                            email: email,
+                            nama: nama,
+                            unit: unit,
+                            nama_projek: section.querySelector('.portfolio-nama').value,
+                            tanggungjawab: Array.from(section.querySelectorAll('.portfolio-tanggungjawab:checked')).map(cb => cb.value),
+                            impak: Array.from(section.querySelectorAll('.portfolio-impak:checked')).map(cb => cb.value),
+                            kekerapan: section.querySelector('.portfolio-kekerapan').value,
+                            bulan_sibuk: Array.from(section.querySelectorAll('.portfolio-bulan:checked')).map(cb => cb.value),
+                            jam_seminggu: parseFloat(section.querySelector('.portfolio-jam').value) || 0,
+                            jumlah_staf: section.querySelector('.portfolio-staf').value,
+                            beban_tinggi: section.querySelector('.portfolio-beban').value,
+                            penglibatan_agensi: section.querySelector('.portfolio-penglibatan').value,
+                            serah_unit: section.querySelector('.portfolio-serah').value,
+                            cadangan_serah: section.querySelector('.portfolio-cadangan-serah').value,
+                            timestamp: serverTimestamp()
+                        };
+                        batchPromises.push(addDoc(collection(db, "portfolios"), dataObj));
+                    });
+                    await Promise.all(batchPromises);
+                    showMessage("Maklumat berjaya direkodkan!");
+                    document.getElementById('beban-form').reset();
+                    document.getElementById('email').value = email;
+                    document.getElementById('portfolio-container').innerHTML = '';
+                    formCount = 0;
+                    generatePortfolioForm(); 
+                    switchTab('dashboard');
+                }
+            } catch (error) {
+                console.error("Error submitting:", error);
+                showMessage("Gagal menyimpan data.", true);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        }
+
+        window.switchTab = function(tabName) {
+            ['form', 'mydata', 'dashboard'].forEach(t => {
+                document.getElementById(`${t}-section`).classList.add('hidden');
+                document.getElementById(`tab-${t}`).classList.remove('border-blue-500', 'text-blue-600');
+                document.getElementById(`tab-${t}`).classList.add('border-transparent', 'text-gray-500');
+            });
+
+            document.getElementById(`${tabName}-section`).classList.remove('hidden');
+            document.getElementById(`tab-${tabName}`).classList.add('border-blue-500', 'text-blue-600');
+            document.getElementById(`tab-${tabName}`).classList.remove('border-transparent', 'text-gray-500');
+        };
+
+        // --- DASHBOARD FUNCTIONS ---
+        const processData = (allData, filterVal = '') => {
+            const data = filterVal === '' ? allData : allData.filter(d => d.unit === filterVal);
+            
+            let totalHours = 0;
+            let highBurdenCount = 0;
+            const staffNames = new Set();
+            
+            data.forEach(d => {
+                totalHours += (d.jam_seminggu || 0);
+                if (d.beban_tinggi === 'Ya') highBurdenCount++;
+                if (d.nama) staffNames.add(d.nama.toLowerCase().trim());
+            });
+            
+            document.getElementById('kpi-total-hours').innerText = totalHours.toFixed(1);
+            document.getElementById('kpi-high-burden').innerText = highBurdenCount;
+            
+            const staffCount = staffNames.size > 0 ? staffNames.size : 1; 
+            const maxCapacity = staffCount * 40; 
+            const workloadIndex = (totalHours / maxCapacity) * 100;
+            
+            const workloadEl = document.getElementById('kpi-workload-index');
+            workloadEl.innerText = isNaN(workloadIndex) ? '0%' : workloadIndex.toFixed(1) + '%';
+            workloadEl.className = workloadIndex > 100 ? "text-3xl font-black text-red-600" : "text-3xl font-black text-slate-800";
+
+            drawChartTop10Portfolio(data);
+            drawChartTop5Unit(allData); 
+            drawChartTop5Staff(data);
+            drawChartFrequency(data);
+            drawChartPeakMonths(data);
+            drawTable(data);
+        };
+        
+        function drawChartTop10Portfolio(data) {
+            const el = document.getElementById('chart_top10_portfolio');
+            if (data.length === 0) return el.innerHTML = '<p class="text-gray-400">Tiada Rekod</p>';
+            const map = {};
+            data.forEach(d => {
+                let label = d.nama_projek || 'Tiada Nama';
+                label = label.length > 25 ? label.substring(0, 25) + '...' : label;
+                map[label] = (map[label] || 0) + (d.jam_seminggu || 0);
+            });
+            const sorted = Object.entries(map).sort((a,b) => b[1] - a[1]).slice(0, 10);
+            const chartData = [['Portfolio', 'Jam/Minggu', { role: 'style' }]];
+            sorted.forEach((item, index) => chartData.push([item[0], item[1], index < 3 ? '#ef4444' : '#3b82f6']));
+            new google.visualization.BarChart(el).draw(google.visualization.arrayToDataTable(chartData), { legend: 'none', chartArea: { width: '55%', height: '80%' }, hAxis: { minValue: 0 } });
+        }
+
+        function drawChartTop5Unit(data) {
+            const el = document.getElementById('chart_top5_unit');
+            if (data.length === 0) return el.innerHTML = '<p class="text-gray-400">Tiada Rekod</p>';
+            const map = {};
+            data.forEach(d => map[d.unit || 'Lain-lain'] = (map[d.unit || 'Lain-lain'] || 0) + (d.jam_seminggu || 0));
+            const sorted = Object.entries(map).sort((a,b) => b[1] - a[1]).slice(0, 5);
+            const chartData = [['Unit', 'Jam']];
+            sorted.forEach(item => chartData.push(item));
+            new google.visualization.ColumnChart(el).draw(google.visualization.arrayToDataTable(chartData), { legend: 'none', colors: ['#8b5cf6'], chartArea: { width: '80%', height: '70%' } });
+        }
+
+        function drawChartTop5Staff(data) {
+            const el = document.getElementById('chart_top5_staff');
+            if (data.length === 0) return el.innerHTML = '<p class="text-gray-400">Tiada Rekod</p>';
+            const map = {};
+            data.forEach(d => map[d.nama || 'Rahsia'] = (map[d.nama || 'Rahsia'] || 0) + (d.jam_seminggu || 0));
+            const sorted = Object.entries(map).sort((a,b) => b[1] - a[1]).slice(0, 5);
+            const chartData = [['Staf', 'Jam']];
+            sorted.forEach(item => chartData.push(item));
+            new google.visualization.ColumnChart(el).draw(google.visualization.arrayToDataTable(chartData), { legend: 'none', colors: ['#f59e0b'], chartArea: { width: '80%', height: '70%' } });
+        }
+
+        function drawChartFrequency(data) {
+            const el = document.getElementById('chart_frequency');
+            if (data.length === 0) return el.innerHTML = '<p class="text-gray-400">Tiada Rekod</p>';
+            const map = {};
+            data.forEach(d => { if (d.kekerapan) map[d.kekerapan] = (map[d.kekerapan] || 0) + 1; });
+            const chartData = [['Kekerapan', 'Jumlah']];
+            Object.keys(map).forEach(k => chartData.push([k, map[k]]));
+            new google.visualization.PieChart(el).draw(google.visualization.arrayToDataTable(chartData), { pieHole: 0.4, colors: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'], chartArea: { width: '90%', height: '80%' } });
+        }
+
+        function drawChartPeakMonths(data) {
+            const el = document.getElementById('chart_peak_months');
+            if (data.length === 0) return el.innerHTML = '<p class="text-gray-400">Tiada Rekod</p>';
+            const map = {};
+            data.forEach(d => { if (d.bulan_sibuk) d.bulan_sibuk.forEach(b => { if (b !== 'Tiada') map[b] = (map[b] || 0) + 1; }); });
+            const chartData = [['Bulan', 'Kekerapan']];
+            ['Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'].forEach(m => chartData.push([m.substring(0,3), map[m] || 0]));
+            new google.visualization.LineChart(el).draw(google.visualization.arrayToDataTable(chartData), { legend: 'none', colors: ['#f97316'], chartArea: { width: '85%', height: '70%' }, curveType: 'function' });
+        }
+
+        function drawTable(data) {
+            const el = document.getElementById('table_div');
+            if (data.length === 0) return el.innerHTML = '<p class="text-gray-400 text-center py-4">Tiada Rekod Semasa</p>';
+            const gData = new google.visualization.DataTable();
+            gData.addColumn('string', 'Nama Staf'); gData.addColumn('string', 'Unit'); gData.addColumn('string', 'Portfolio'); gData.addColumn('number', 'Jam'); gData.addColumn('string', 'B. Tinggi');
+            data.forEach(d => gData.addRow([d.nama || '-', d.unit || '-', d.nama_projek || '-', d.jam_seminggu || 0, d.beban_tinggi || '-']));
+            new google.visualization.Table(el).draw(gData, { showRowNumber: true, width: '100%', page: 'enable', pageSize: 10, cssClassNames: { headerRow: 'bg-slate-100 font-bold', tableRow: 'text-sm' } });
+        }
+
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
