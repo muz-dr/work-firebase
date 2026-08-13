@@ -11,6 +11,20 @@
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3b82f6; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        body, div, nav, input, select, button, table { transition: background-color 0.3s, color 0.3s, border-color 0.3s; }   
+        body.dark-mode { background-color: #0f172a !important; color: #f1f5f9 !important; }
+        body.dark-mode .bg-white { background-color: #1e293b !important; border-color: #334155 !important; }
+        body.dark-mode nav.bg-white { border-bottom-color: #334155 !important; }
+        body.dark-mode .bg-slate-50, body.dark-mode .bg-blue-50, body.dark-mode .bg-emerald-50, body.dark-mode .bg-gray-100 { background-color: #0f172a !important; border-color: #334155 !important; color: #e2e8f0 !important; }
+        body.dark-mode .text-slate-800, body.dark-mode .text-slate-700, body.dark-mode .text-gray-700, body.dark-mode .text-blue-800, body.dark-mode .text-emerald-800 { color: #f8fafc !important; }
+        body.dark-mode .text-slate-600, body.dark-mode .text-gray-500, body.dark-mode .text-slate-500 { color: #94a3b8 !important; }
+        body.dark-mode input, body.dark-mode select { background-color: #0f172a !important; color: #f8fafc !important; border-color: #475569 !important; }
+        body.dark-mode .border-slate-200, body.dark-mode .border-gray-200, body.dark-mode .border-gray-300, body.dark-mode .border-blue-100, body.dark-mode .border-emerald-100, body.dark-mode .border-slate-100 { border-color: #334155 !important; }
+        body.dark-mode td, body.dark-mode th { border-color: #334155 !important; color: #f1f5f9 !important;}
+        body.dark-mode tr.bg-slate-50 { background-color: #334155 !important; }
+        body.dark-mode #user-nav .bg-slate-100 { background-color: #334155 !important; border-color: #475569 !important; }
+        body.dark-mode #user-nav button.text-slate-700 { color: #f1f5f9 !important; border-color: #475569 !important; }
+        body.dark-mode #user-nav button.text-slate-700:hover { background-color: #475569 !important; }
     </style>
 </head>
 <body class="text-slate-800 pb-20">
@@ -28,6 +42,10 @@
                 </div>
                 <!-- User Info & Logout (Hidden by default) -->
                 <div id="user-nav" class="hidden flex items-center gap-4 text-sm font-medium text-slate-600">
+                    <!-- Dark Mode Toggle -->
+                    <button onclick="toggleDarkMode()" id="btn-dark" class="px-3 py-1.5 bg-slate-800 text-yellow-400 hover:bg-slate-700 rounded-lg font-bold border border-slate-700 transition-colors shadow-sm" title="Tukar Tema">
+                        <i class="fas fa-moon"></i>
+                    </button>
                     <!-- Font Size Changer -->
                     <div class="hidden sm:flex bg-slate-100 rounded-lg overflow-hidden border border-slate-200">
                         <button onclick="changeFontSize(-1)" class="px-3 py-1 hover:bg-slate-200 text-slate-700 font-bold border-r border-slate-300" title="Kecilkan Tulisan">A-</button>
@@ -942,7 +960,26 @@
             document.documentElement.style.fontSize = currentFontSize + '%';
         };
 
-
+// --- DARK MODE FUNCTION ---
+        window.toggleDarkMode = function() {
+            const body = document.body;
+            const btnIcon = document.querySelector('#btn-dark i');
+            const btn = document.getElementById('btn-dark');
+            
+            body.classList.toggle('dark-mode');
+            
+            // Swap icon and button colors depending on the theme
+            if (body.classList.contains('dark-mode')) {
+                btnIcon.classList.replace('fa-moon', 'fa-sun');
+                btn.classList.replace('text-yellow-400', 'text-yellow-200');
+                btn.classList.replace('bg-slate-800', 'bg-slate-600');
+            } else {
+                btnIcon.classList.replace('fa-sun', 'fa-moon');
+                btn.classList.replace('text-yellow-200', 'text-yellow-400');
+                btn.classList.replace('bg-slate-600', 'bg-slate-800');
+            }
+        };
+        
         document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
