@@ -17,6 +17,7 @@
         @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
         .shake { animation: shake 0.4s ease; }
 
+        /* ── DARK MODE ── */
         body, div, nav, input, select, button, table { transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
         body.dark-mode { background-color: #0f172a !important; color: #f1f5f9 !important; }
         body.dark-mode .bg-white { background-color: #1e293b !important; border-color: #334155 !important; }
@@ -34,13 +35,16 @@
         body.dark-mode #user-nav .bg-slate-100 { background-color: #334155 !important; border-color: #475569 !important; }
         body.dark-mode #user-nav button.text-slate-700 { color: #f1f5f9 !important; border-color: #475569 !important; }
 
+        /* ── PASSKEY MODAL ── */
         #passkey-modal { backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
 
+        /* ── DASHBOARD ── */
         .dash-card { transition: box-shadow 0.2s ease; }
         .dash-card:hover { box-shadow: 0 12px 30px -6px rgba(0,0,0,0.1); }
         .data-tr { transition: background-color 0.1s; cursor: default; }
         .data-tr:hover { background-color: #f8fafc; }
 
+        /* ── BADGES ── */
         .badge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 9999px; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.01em; }
         .badge-red   { background: #fee2e2; color: #b91c1c; }
         .badge-green { background: #dcfce7; color: #15803d; }
@@ -48,14 +52,19 @@
         .badge-amber { background: #fef9c3; color: #a16207; }
         .badge-slate { background: #f1f5f9; color: #475569; }
 
+        /* ── PROGRESS BARS ── */
         .pbar-track { height: 5px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; margin-top: 10px; }
         .pbar-fill   { height: 100%; border-radius: 9999px; transition: width 0.8s cubic-bezier(.4,0,.2,1); }
 
+        /* ── PAGINATION BUTTONS ── */
         button:disabled { opacity: 0.4; cursor: not-allowed; }
     </style>
 </head>
 <body class="text-slate-800 pb-20">
 
+<!-- ══════════════════════════════════════════
+     PASSKEY MODAL
+══════════════════════════════════════════ -->
 <div id="passkey-modal" class="fixed inset-0 bg-slate-900/60 z-50 hidden items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden" onclick="event.stopPropagation()">
         <div class="bg-gradient-to-br from-slate-700 to-slate-900 px-8 py-8 text-center">
@@ -88,6 +97,9 @@
     </div>
 </div>
 
+<!-- ══════════════════════════════════════════
+     TOP NAVIGATION
+══════════════════════════════════════════ -->
 <nav class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-40">
     <div class="w-full mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16 items-center">
@@ -114,6 +126,8 @@
                 </button>
             </div>
         </div>
+
+        <!-- App Tabs -->
         <div id="app-tabs" class="hidden flex space-x-1 border-t border-slate-100 overflow-x-auto">
             <button onclick="switchTab('form')" id="tab-form"
                 class="border-b-2 border-blue-500 text-blue-600 py-3 px-4 text-sm font-semibold transition-colors whitespace-nowrap">
@@ -136,6 +150,9 @@
 
 <div class="w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
+    <!-- ══════════════════════════════════════════
+         AUTH SECTION
+    ══════════════════════════════════════════ -->
     <div id="auth-section" class="max-w-md mx-auto bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden mt-10">
         <div class="bg-blue-600 px-6 py-6 text-center">
             <i class="fas fa-user-lock text-4xl text-white mb-3"></i>
@@ -173,8 +190,12 @@
         </form>
     </div>
 
+    <!-- ══════════════════════════════════════════
+         MAIN APP SECTIONS
+    ══════════════════════════════════════════ -->
     <div id="app-sections" class="hidden">
 
+        <!-- ── FORM SECTION ── -->
         <div id="form-section" class="w-full mx-auto bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
             <div class="bg-blue-50 px-6 py-5 border-b border-blue-100 flex justify-between items-center">
                 <div>
@@ -208,7 +229,9 @@
                         </select>
                     </div>
                 </div>
+
                 <div id="portfolio-container" class="space-y-6"></div>
+
                 <div class="mt-8 pt-6 border-t border-gray-200">
                     <div id="add-more-container">
                         <label class="block text-base font-bold text-gray-800 mb-3">15. Adakah anda ingin menambah SATU LAGI projek/aktiviti/portfolio?</label>
@@ -227,6 +250,7 @@
             </form>
         </div>
 
+        <!-- ── MY DATA SECTION ── -->
         <div id="mydata-section" class="hidden w-full mx-auto">
             <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
                 <div class="bg-emerald-50 px-6 py-5 border-b border-emerald-100 flex items-center gap-3">
@@ -255,8 +279,12 @@
             </div>
         </div>
 
+        <!-- ══════════════════════════════════════════
+             DASHBOARD SECTION — REDESIGNED
+        ══════════════════════════════════════════ -->
         <div id="dashboard-section" class="hidden space-y-5">
 
+            <!-- Header Bar -->
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white px-6 py-4 rounded-xl shadow-sm border border-slate-100">
                 <div>
                     <h2 class="text-xl font-extrabold text-slate-800 tracking-tight">
@@ -284,7 +312,10 @@
                 </div>
             </div>
 
+            <!-- ── KPI CARDS ── -->
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+
+                <!-- KPI 1: Total Hours -->
                 <div class="bg-white rounded-xl border border-slate-100 p-6 dash-card relative overflow-hidden">
                     <div class="absolute inset-0 bg-blue-500/4 pointer-events-none rounded-xl"></div>
                     <div class="flex items-start justify-between mb-3">
@@ -296,9 +327,12 @@
                     <p class="text-xs font-semibold text-slate-400 mb-1 tracking-wide">Jumlah Jam / Minggu</p>
                     <p class="text-4xl font-black text-slate-800 leading-none" id="kpi-total-hours">0</p>
                     <p class="text-xs text-slate-400 mt-2">Agregat keseluruhan aktiviti aktif</p>
-                    <div class="pbar-track"><div class="pbar-fill bg-blue-500" id="kpi-hours-bar" style="width:0%"></div></div>
+                    <div class="pbar-track">
+                        <div class="pbar-fill bg-blue-500" id="kpi-hours-bar" style="width:0%"></div>
+                    </div>
                 </div>
 
+                <!-- KPI 2: High Burden -->
                 <div class="bg-white rounded-xl border border-slate-100 p-6 dash-card relative overflow-hidden">
                     <div class="absolute inset-0 bg-red-500/4 pointer-events-none rounded-xl"></div>
                     <div class="flex items-start justify-between mb-3">
@@ -310,9 +344,12 @@
                     <p class="text-xs font-semibold text-slate-400 mb-1 tracking-wide">Portfolio Beban Tinggi</p>
                     <p class="text-4xl font-black text-slate-800 leading-none" id="kpi-high-burden">0</p>
                     <p class="text-xs text-slate-400 mt-2">Ditanda sebagai "Beban Tinggi"</p>
-                    <div class="pbar-track"><div class="pbar-fill bg-red-500" id="kpi-burden-bar" style="width:0%"></div></div>
+                    <div class="pbar-track">
+                        <div class="pbar-fill bg-red-500" id="kpi-burden-bar" style="width:0%"></div>
+                    </div>
                 </div>
 
+                <!-- KPI 3: Workload Index -->
                 <div class="bg-white rounded-xl border border-slate-100 p-6 dash-card relative overflow-hidden">
                     <div class="absolute inset-0 bg-amber-500/4 pointer-events-none rounded-xl"></div>
                     <div class="flex items-start justify-between mb-3">
@@ -324,15 +361,20 @@
                     <p class="text-xs font-semibold text-slate-400 mb-1 tracking-wide">Indeks Beban Kerja</p>
                     <p class="text-4xl font-black leading-none" id="kpi-workload-index">0%</p>
                     <p class="text-xs text-slate-400 mt-2">100% = had kapasiti optimum (40 jam/staf)</p>
-                    <div class="pbar-track"><div class="pbar-fill bg-amber-500" id="kpi-index-bar" style="width:0%"></div></div>
+                    <div class="pbar-track">
+                        <div class="pbar-fill bg-amber-500" id="kpi-index-bar" style="width:0%"></div>
+                    </div>
                 </div>
             </div>
 
+            <!-- ── CHART ROW 1: Top 10 + Unit Donut ── -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                <!-- Top 10 Portfolios -->
                 <div class="lg:col-span-2 bg-white rounded-xl border border-slate-100 p-5 dash-card">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-sm font-bold text-slate-700 flex items-center gap-2">
-                            <span class="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span>Top 10 Portfolio — Beban Tertinggi
+                            <span class="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span>
+                            Top 10 Portfolio — Beban Tertinggi
                         </h3>
                         <span class="text-xs text-slate-400">Jam / Minggu</span>
                     </div>
@@ -343,10 +385,12 @@
                         </div>
                     </div>
                 </div>
+                <!-- Unit Donut -->
                 <div class="bg-white rounded-xl border border-slate-100 p-5 dash-card">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-sm font-bold text-slate-700 flex items-center gap-2">
-                            <span class="w-2.5 h-2.5 rounded-full bg-purple-500 inline-block"></span>Taburan Beban Unit
+                            <span class="w-2.5 h-2.5 rounded-full bg-purple-500 inline-block"></span>
+                            Taburan Beban Unit
                         </h3>
                         <span class="text-xs text-slate-400">Jam / Minggu</span>
                     </div>
@@ -359,11 +403,14 @@
                 </div>
             </div>
 
+            <!-- ── CHART ROW 2: Peak Months + Frequency ── -->
             <div class="grid grid-cols-1 lg:grid-cols-5 gap-5">
+                <!-- Peak Months Area -->
                 <div class="lg:col-span-3 bg-white rounded-xl border border-slate-100 p-5 dash-card">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-sm font-bold text-slate-700 flex items-center gap-2">
-                            <span class="w-2.5 h-2.5 rounded-full bg-orange-500 inline-block"></span>Trend Bulan Paling Sibuk
+                            <span class="w-2.5 h-2.5 rounded-full bg-orange-500 inline-block"></span>
+                            Trend Bulan Paling Sibuk
                         </h3>
                         <span class="text-xs text-slate-400">Bilangan Aktiviti</span>
                     </div>
@@ -374,10 +421,12 @@
                         </div>
                     </div>
                 </div>
+                <!-- Frequency Donut -->
                 <div class="lg:col-span-2 bg-white rounded-xl border border-slate-100 p-5 dash-card">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-sm font-bold text-slate-700 flex items-center gap-2">
-                            <span class="w-2.5 h-2.5 rounded-full bg-green-500 inline-block"></span>Kekerapan Aktiviti
+                            <span class="w-2.5 h-2.5 rounded-full bg-green-500 inline-block"></span>
+                            Kekerapan Aktiviti
                         </h3>
                     </div>
                     <div class="relative" style="height:220px">
@@ -389,10 +438,12 @@
                 </div>
             </div>
 
+            <!-- ── CHART ROW 3: Top 5 Staff ── -->
             <div class="bg-white rounded-xl border border-slate-100 p-5 dash-card">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-sm font-bold text-slate-700 flex items-center gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span>Top 5 Staf — Beban Tertinggi
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span>
+                        Top 5 Staf — Beban Tertinggi
                     </h3>
                     <span class="text-xs text-slate-400">Jam / Minggu (agregat)</span>
                 </div>
@@ -404,7 +455,10 @@
                 </div>
             </div>
 
+            <!-- ── ACTIONABLE TABLES ── -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+                <!-- High Burden Table -->
                 <div class="bg-white rounded-xl border border-slate-100 overflow-hidden dash-card">
                     <div class="flex items-center gap-3 px-5 py-4 border-b border-red-100 bg-red-50">
                         <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -432,6 +486,7 @@
                     </div>
                 </div>
 
+                <!-- Transfer Suggestions Table -->
                 <div class="bg-white rounded-xl border border-slate-100 overflow-hidden dash-card">
                     <div class="flex items-center gap-3 px-5 py-4 border-b border-amber-100 bg-amber-50">
                         <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -460,6 +515,7 @@
                 </div>
             </div>
 
+            <!-- ── MAIN DATA TABLE ── -->
             <div class="bg-white rounded-xl border border-slate-100 overflow-hidden dash-card">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 px-5 py-4 border-b border-slate-100">
                     <h3 class="text-sm font-bold text-slate-700">
@@ -487,6 +543,7 @@
                         <i class="fas fa-inbox text-3xl mb-2 block opacity-50"></i>Tiada rekod ditemui
                     </div>
                 </div>
+                <!-- Pagination -->
                 <div class="flex flex-col sm:flex-row items-center justify-between px-5 py-3 border-t border-slate-100 gap-3">
                     <span class="text-xs text-slate-400" id="table-page-info">—</span>
                     <div class="flex items-center gap-2">
@@ -502,18 +559,21 @@
                 </div>
             </div>
 
-        </div>
-    </div>
-</div>
+        </div><!-- end #dashboard-section -->
+    </div><!-- end #app-sections -->
+</div><!-- end main container -->
 
 <script type="module">
-    import { initializeApp }                                           from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { initializeApp }                                              from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword,
              createUserWithEmailAndPassword,
-             onAuthStateChanged, signOut }                            from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+             onAuthStateChanged, signOut }                               from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, collection, addDoc, onSnapshot, query,
-             serverTimestamp, doc, updateDoc, deleteDoc }             from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+             serverTimestamp, doc, updateDoc, deleteDoc }                from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+    /* ══════════════════════════════════════════
+       FIREBASE CONFIG — unchanged
+    ══════════════════════════════════════════ */
     const firebaseConfig = {
         apiKey:            "AIzaSyDS_zr-h8GZlBGRqBdsu-yAlg_h_suwX8Q",
         authDomain:        "analysis-beban-kerja.firebaseapp.com",
@@ -524,15 +584,12 @@
         measurementId:     "G-2891WGDXJX"
     };
 
-    const _s = "B3b4nK3rj4#2025@";
-    const _h = "1fd734369b226419815ee54bacb982a621467f7fc991d430e6a4dbf2be6baad6";
+    /* ══════════════════════════════════════════
+       PASSKEY — TUKAR NILAI DI BAWAH INI
+    ══════════════════════════════════════════ */
+    const DASHBOARD_PASSKEY = "papanpemuka";   // <── tukar kepada kata kunci pilihan anda
 
-    async function _digest(input) {
-        const encoded = new TextEncoder().encode(_s + input);
-        const buf     = await crypto.subtle.digest("SHA-256", encoded);
-        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,"0")).join("");
-    }
-
+    /* ── STATE ── */
     let app, auth, db;
     let globalData          = [];
     let formCount           = 0;
@@ -541,25 +598,25 @@
     let isDashboardUnlocked = false;
     let chartInstances      = {};
 
+    /* table state */
     let tableAllData      = [];
     let tableFilteredData = [];
     let tableCurrentPage  = 1;
     const PAGE_SIZE       = 10;
 
+    /* chart colour palette */
     const PAL = ['#3b82f6','#8b5cf6','#10b981','#f59e0b','#ef4444',
                  '#06b6d4','#ec4899','#6366f1','#84cc16','#f97316'];
 
+    /* ══════════════════════════════════════════
+       UTILITY
+    ══════════════════════════════════════════ */
     function showMessage(msg, isError = false) {
         const d = document.createElement('div');
         d.className = `fixed bottom-4 right-4 p-4 rounded-xl shadow-xl text-white z-[60] flex items-center gap-3 text-sm font-semibold ${isError ? 'bg-red-600' : 'bg-emerald-600'}`;
         d.innerHTML = `<i class="fas ${isError ? 'fa-exclamation-circle' : 'fa-check-circle'} text-lg"></i>${msg}`;
         document.body.appendChild(d);
-        setTimeout(() => {
-            d.style.transition = 'all .4s';
-            d.style.opacity    = '0';
-            d.style.transform  = 'translateY(12px)';
-            setTimeout(() => d.remove(), 400);
-        }, 3500);
+        setTimeout(() => { d.style.transition='all .4s'; d.style.opacity='0'; d.style.transform='translateY(12px)'; setTimeout(()=>d.remove(),400); }, 3500);
     }
 
     function destroyChart(key) {
@@ -571,6 +628,9 @@
         if (el) el.classList.toggle('hidden', !show);
     }
 
+    /* ══════════════════════════════════════════
+       PASSKEY
+    ══════════════════════════════════════════ */
     function showPasskeyModal() {
         const m = document.getElementById('passkey-modal');
         m.classList.remove('hidden'); m.classList.add('flex');
@@ -585,40 +645,39 @@
         m.classList.add('hidden'); m.classList.remove('flex');
     };
 
-    window.verifyPasskey = async function() {
-        const val    = document.getElementById('passkey-input').value;
-        const digest = await _digest(val);
-        if (digest === _h) {
+    window.verifyPasskey = function() {
+        const val = document.getElementById('passkey-input').value;
+        if (val === DASHBOARD_PASSKEY) {
             isDashboardUnlocked = true;
             window.closePasskeyModal();
+            /* update lock badge → unlocked */
             const badge = document.getElementById('dash-lock-badge');
-            if (badge) {
-                badge.innerHTML  = '<i class="fas fa-unlock text-xs"></i>';
-                badge.className  = 'ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold bg-green-100 text-green-600';
-            }
+            if (badge) { badge.innerHTML = '<i class="fas fa-unlock text-xs"></i>'; badge.className = 'ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold bg-green-100 text-green-600'; }
             _switchTabCore('dashboard');
             if (globalData.length > 0) processData(globalData, document.getElementById('filter-unit').value);
         } else {
             document.getElementById('passkey-error').classList.remove('hidden');
             const inp = document.getElementById('passkey-input');
-            inp.value = '';
-            inp.classList.add('border-red-400', 'shake');
+            inp.value = ''; inp.classList.add('border-red-400','shake');
             setTimeout(() => inp.classList.remove('shake'), 400);
             inp.focus();
         }
     };
 
+    /* ══════════════════════════════════════════
+       TAB SWITCHING
+    ══════════════════════════════════════════ */
     function _switchTabCore(name) {
-        ['form', 'mydata', 'dashboard'].forEach(t => {
+        ['form','mydata','dashboard'].forEach(t => {
             document.getElementById(`${t}-section`).classList.add('hidden');
             const tab = document.getElementById(`tab-${t}`);
-            tab.classList.remove('border-blue-500', 'text-blue-600');
-            tab.classList.add('border-transparent', 'text-gray-500');
+            tab.classList.remove('border-blue-500','text-blue-600');
+            tab.classList.add('border-transparent','text-gray-500');
         });
         document.getElementById(`${name}-section`).classList.remove('hidden');
         const act = document.getElementById(`tab-${name}`);
-        act.classList.add('border-blue-500', 'text-blue-600');
-        act.classList.remove('border-transparent', 'text-gray-500');
+        act.classList.add('border-blue-500','text-blue-600');
+        act.classList.remove('border-transparent','text-gray-500');
     }
 
     window.switchTab = function(name) {
@@ -626,43 +685,53 @@
         _switchTabCore(name);
     };
 
+    /* ══════════════════════════════════════════
+       INIT
+    ══════════════════════════════════════════ */
     async function initApp() {
         app  = initializeApp(firebaseConfig);
         auth = getAuth(app);
         db   = getFirestore(app);
 
+        /* Chart.js global defaults */
         Chart.defaults.font.family = "'Inter', sans-serif";
         Chart.defaults.color       = '#64748b';
         Chart.defaults.plugins.legend.labels.usePointStyle = true;
         Chart.defaults.plugins.legend.labels.padding       = 14;
 
+        /* auth buttons */
         document.getElementById('btn-login').addEventListener('click', handleLogin);
         document.getElementById('btn-register').addEventListener('click', handleRegister);
         document.getElementById('btn-logout').addEventListener('click', () => signOut(auth));
+
+        /* form */
         document.getElementById('add-portfolio-btn').addEventListener('click', () => generatePortfolioForm());
         document.getElementById('beban-form').addEventListener('submit', handleFormSubmit);
         document.getElementById('btn-cancel-edit').addEventListener('click', cancelEditMode);
 
+        /* dashboard filter */
         document.getElementById('filter-unit').addEventListener('change', e => {
             processData(globalData, e.target.value);
         });
 
+        /* table search */
         document.getElementById('table-search').addEventListener('input', e => {
             const q = e.target.value.toLowerCase();
             tableFilteredData = tableAllData.filter(d =>
-                (d.nama       || '').toLowerCase().includes(q) ||
-                (d.nama_projek|| '').toLowerCase().includes(q) ||
-                (d.unit       || '').toLowerCase().includes(q)
+                (d.nama||'').toLowerCase().includes(q) ||
+                (d.nama_projek||'').toLowerCase().includes(q) ||
+                (d.unit||'').toLowerCase().includes(q)
             );
             tableCurrentPage = 1;
             renderTablePage();
         });
 
+        /* auth state */
         onAuthStateChanged(auth, user => {
-            const authSec = document.getElementById('auth-section');
-            const appSec  = document.getElementById('app-sections');
-            const navTabs = document.getElementById('app-tabs');
-            const userNav = document.getElementById('user-nav');
+            const authSec  = document.getElementById('auth-section');
+            const appSec   = document.getElementById('app-sections');
+            const navTabs  = document.getElementById('app-tabs');
+            const userNav  = document.getElementById('user-nav');
 
             if (user) {
                 currentUser = user;
@@ -673,15 +742,10 @@
                 navTabs.classList.remove('hidden');
                 userNav.classList.remove('hidden'); userNav.classList.add('flex');
                 startDatabaseListener();
-                if (!editingDocId) {
-                    document.getElementById('portfolio-container').innerHTML = '';
-                    formCount = 0;
-                    generatePortfolioForm();
-                }
+                if (!editingDocId) { document.getElementById('portfolio-container').innerHTML=''; formCount=0; generatePortfolioForm(); }
                 _switchTabCore('form');
             } else {
-                currentUser         = null;
-                isDashboardUnlocked = false;
+                currentUser = null; isDashboardUnlocked = false;
                 authSec.classList.remove('hidden');
                 appSec.classList.add('hidden');
                 navTabs.classList.add('hidden');
@@ -690,33 +754,39 @@
         });
     }
 
+    /* ══════════════════════════════════════════
+       AUTH
+    ══════════════════════════════════════════ */
     async function handleLogin() {
         const e = document.getElementById('auth-email').value;
         const p = document.getElementById('auth-password').value;
-        if (!e || !p) return showMessage("Sila masukkan emel dan kata laluan.", true);
+        if (!e||!p) return showMessage("Sila masukkan emel dan kata laluan.",true);
         const btn = document.getElementById('btn-login');
         btn.textContent = "Sila tunggu…";
-        try { await signInWithEmailAndPassword(auth, e, p); showMessage("Berjaya log masuk!"); }
-        catch { showMessage("Gagal log masuk. Periksa emel/kata laluan.", true); }
+        try { await signInWithEmailAndPassword(auth,e,p); showMessage("Berjaya log masuk!"); }
+        catch { showMessage("Gagal log masuk. Periksa emel/kata laluan.",true); }
         finally { btn.textContent = "Log Masuk"; }
     }
 
     async function handleRegister() {
         const e = document.getElementById('auth-email').value;
         const p = document.getElementById('auth-password').value;
-        if (!e || p.length < 6) return showMessage("Emel diperlukan dan kata laluan min 6 aksara.", true);
+        if (!e||p.length<6) return showMessage("Emel diperlukan dan kata laluan min 6 aksara.",true);
         const btn = document.getElementById('btn-register');
         btn.textContent = "Mendaftar…";
-        try { await createUserWithEmailAndPassword(auth, e, p); showMessage("Akaun berjaya didaftarkan!"); }
-        catch { showMessage("Emel ini mungkin telah digunakan.", true); }
+        try { await createUserWithEmailAndPassword(auth,e,p); showMessage("Akaun berjaya didaftarkan!"); }
+        catch { showMessage("Emel ini mungkin telah digunakan.",true); }
         finally { btn.textContent = "Daftar Akaun Baru"; }
     }
 
+    /* ══════════════════════════════════════════
+       DATABASE
+    ══════════════════════════════════════════ */
     function startDatabaseListener() {
-        onSnapshot(query(collection(db, "portfolios")), snap => {
+        onSnapshot(query(collection(db,"portfolios")), snap => {
             globalData = [];
-            snap.forEach(d => globalData.push({ id: d.id, ...d.data() }));
-            globalData.sort((a, b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
+            snap.forEach(d => globalData.push({ id:d.id, ...d.data() }));
+            globalData.sort((a,b) => (b.timestamp?.toMillis()||0) - (a.timestamp?.toMillis()||0));
 
             const upd = document.getElementById('dash-last-updated');
             if (upd) upd.innerText = `Dikemas kini: ${new Date().toLocaleTimeString('ms-MY')}`;
@@ -736,15 +806,15 @@
         if (!tbody) return;
         tbody.innerHTML = '';
         const mine = globalData.filter(d => d.uid === currentUser?.uid);
-        if (!mine.length) { empty.classList.remove('hidden'); return; }
+        if (mine.length === 0) { empty.classList.remove('hidden'); return; }
         empty.classList.add('hidden');
         mine.forEach(d => {
             const tr = document.createElement('tr');
             tr.className = 'data-tr';
             tr.innerHTML = `
-                <td class="p-3 border-b border-slate-100 font-medium text-slate-800">${d.nama_projek || '-'}</td>
-                <td class="p-3 border-b border-slate-100">${d.kekerapan || '-'}</td>
-                <td class="p-3 border-b border-slate-100 font-bold text-blue-600">${d.jam_seminggu || 0}</td>
+                <td class="p-3 border-b border-slate-100 font-medium text-slate-800">${d.nama_projek||'-'}</td>
+                <td class="p-3 border-b border-slate-100">${d.kekerapan||'-'}</td>
+                <td class="p-3 border-b border-slate-100 font-bold text-blue-600">${d.jam_seminggu||0}</td>
                 <td class="p-3 border-b border-slate-100 text-center whitespace-nowrap">
                     <button onclick="editMyData('${d.id}')" class="text-blue-500 hover:text-blue-700 mx-2 text-sm" title="Edit"><i class="fas fa-edit"></i></button>
                     <button onclick="deleteMyData('${d.id}')" class="text-red-400 hover:text-red-600 mx-2 text-sm" title="Padam"><i class="fas fa-trash-alt"></i></button>
@@ -755,34 +825,33 @@
 
     window.deleteMyData = async function(docId) {
         if (!confirm("Adakah anda pasti mahu memadam portfolio ini? Tindakan ini tidak boleh diundur.")) return;
-        try { await deleteDoc(doc(db, "portfolios", docId)); showMessage("Data berjaya dipadam."); }
-        catch { showMessage("Ralat memadam data.", true); }
+        try { await deleteDoc(doc(db,"portfolios",docId)); showMessage("Data berjaya dipadam."); }
+        catch { showMessage("Ralat memadam data.",true); }
     };
 
     window.editMyData = function(docId) {
         const rec = globalData.find(d => d.id === docId);
         if (!rec) return;
         editingDocId = docId;
-        document.getElementById('nama').value = rec.nama || '';
-        document.getElementById('unit').value = rec.unit || '';
+        document.getElementById('nama').value = rec.nama||'';
+        document.getElementById('unit').value = rec.unit||'';
         document.getElementById('portfolio-container').innerHTML = '';
         formCount = 0;
         generatePortfolioForm(rec);
         document.getElementById('add-more-container').classList.add('hidden');
         document.getElementById('btn-cancel-edit').classList.remove('hidden');
-        document.getElementById('form-title').innerText    = "Mengedit Portfolio";
+        document.getElementById('form-title').innerText   = "Mengedit Portfolio";
         document.getElementById('form-subtitle').innerText = "Kemas kini maklumat portfolio di bawah.";
-        document.getElementById('submit-btn').innerHTML    = '<i class="fas fa-save mr-2"></i> Kemas Kini Maklumat';
+        document.getElementById('submit-btn').innerHTML   = '<i class="fas fa-save mr-2"></i> Kemas Kini Maklumat';
         _switchTabCore('form');
     };
 
     function cancelEditMode() {
         editingDocId = null;
         document.getElementById('beban-form').reset();
-        document.getElementById('email').value = currentUser?.email || '';
+        document.getElementById('email').value = currentUser?.email||'';
         document.getElementById('portfolio-container').innerHTML = '';
-        formCount = 0;
-        generatePortfolioForm();
+        formCount = 0; generatePortfolioForm();
         document.getElementById('add-more-container').classList.remove('hidden');
         document.getElementById('btn-cancel-edit').classList.add('hidden');
         document.getElementById('form-title').innerText    = "Maklumat Staf & Unit";
@@ -790,15 +859,18 @@
         document.getElementById('submit-btn').innerHTML    = '<i class="fas fa-paper-plane mr-2"></i> Simpan / Hantar Maklumat';
     }
 
+    /* ══════════════════════════════════════════
+       PORTFOLIO FORM GENERATOR
+    ══════════════════════════════════════════ */
     function generatePortfolioForm(data = null) {
         formCount++;
         const container = document.getElementById('portfolio-container');
-        const div       = document.createElement('div');
-        div.className   = 'portfolio-section p-6 border border-blue-200 rounded-xl bg-white shadow-sm relative';
+        const div = document.createElement('div');
+        div.className = 'portfolio-section p-6 border border-blue-200 rounded-xl bg-white shadow-sm relative';
 
-        const cTJ    = ['Merancang','Memimpin','Menyelaras','Memantau','Menganalisa','Menilai','Membuat keputusan','Mendokumentasi','Mengumpul data','Mengemaskini data'];
-        const cImp   = ['Cawangan','Bahagian','Negeri','Negara','Luar Negara'];
-        const cBulan = ['Januari','Februari','Mac','April','Mei','Jun','Julai','Ogos','September','Oktober','November','Disember','Tiada'];
+        const cTJ   = ['Merancang','Memimpin','Menyelaras','Memantau','Menganalisa','Menilai','Membuat keputusan','Mendokumentasi','Mengumpul data','Mengemaskini data'];
+        const cImp  = ['Cawangan','Bahagian','Negeri','Negara','Luar Negara'];
+        const cBulan= ['Januari','Februari','Mac','April','Mei','Jun','Julai','Ogos','September','Oktober','November','Disember','Tiada'];
 
         div.innerHTML = `
         <div class="flex justify-between items-center mb-5 border-b border-gray-200 pb-3">
@@ -808,99 +880,102 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="md:col-span-2">
                 <label class="block text-sm font-semibold text-gray-700 mb-1">4. Nama Projek / Aktiviti / Portfolio <span class="text-red-500">*</span></label>
-                <input type="text" required class="portfolio-nama w-full rounded-md border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" value="${data?.nama_projek || ''}">
+                <input type="text" required class="portfolio-nama w-full rounded-md border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" value="${data?.nama_projek||''}">
             </div>
             <div class="md:col-span-2">
                 <label class="block text-sm font-semibold text-gray-700 mb-2">5. Tanggungjawab</label>
                 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 text-sm bg-slate-50 p-4 rounded-md border border-gray-200">
-                    ${cTJ.map(t => `<label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" value="${t}" class="portfolio-tanggungjawab rounded border-gray-300 text-blue-600" ${data?.tanggungjawab?.includes(t) ? 'checked' : ''}> <span class="text-gray-700">${t}</span></label>`).join('')}
+                    ${cTJ.map(t=>`<label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" value="${t}" class="portfolio-tanggungjawab rounded border-gray-300 text-blue-600" ${data?.tanggungjawab?.includes(t)?'checked':''}> <span class="text-gray-700">${t}</span></label>`).join('')}
                 </div>
             </div>
             <div class="md:col-span-2">
                 <label class="block text-sm font-semibold text-gray-700 mb-2">6. Outcome / Impak</label>
                 <div class="flex flex-wrap gap-4 text-sm bg-slate-50 p-4 rounded-md border border-gray-200">
-                    ${cImp.map(t => `<label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" value="${t}" class="portfolio-impak rounded border-gray-300 text-blue-600" ${data?.impak?.includes(t) ? 'checked' : ''}> <span class="text-gray-700">${t}</span></label>`).join('')}
+                    ${cImp.map(t=>`<label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" value="${t}" class="portfolio-impak rounded border-gray-300 text-blue-600" ${data?.impak?.includes(t)?'checked':''}> <span class="text-gray-700">${t}</span></label>`).join('')}
                 </div>
             </div>
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1">7. Kekerapan <span class="text-red-500">*</span></label>
                 <select required class="portfolio-kekerapan w-full rounded-md border border-gray-300 px-4 py-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
                     <option value="">-- Sila Pilih --</option>
-                    ${['Harian','Mingguan','Bulanan','Dwitahunan','Tahunan','Bermusim'].map(v => `<option value="${v}" ${data?.kekerapan === v ? 'selected' : ''}>${v}</option>`).join('')}
+                    ${['Harian','Mingguan','Bulanan','Dwitahunan','Tahunan','Bermusim'].map(v=>`<option value="${v}" ${data?.kekerapan===v?'selected':''}>${v}</option>`).join('')}
                 </select>
             </div>
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1">9. Anggaran Jam Seminggu</label>
-                <input type="number" min="0" step="0.5" class="portfolio-jam w-full rounded-md border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" value="${data?.jam_seminggu || ''}">
+                <input type="number" min="0" step="0.5" class="portfolio-jam w-full rounded-md border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" value="${data?.jam_seminggu||''}">
             </div>
             <div class="md:col-span-2">
                 <label class="block text-sm font-semibold text-gray-700 mb-2">8. Bulan Paling Sibuk</label>
                 <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 text-sm bg-slate-50 p-4 rounded-md border border-gray-200">
-                    ${cBulan.map(b => `<label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" value="${b}" class="portfolio-bulan rounded border-gray-300 text-orange-500" ${data?.bulan_sibuk?.includes(b) ? 'checked' : ''}> <span class="text-gray-700">${b}</span></label>`).join('')}
+                    ${cBulan.map(b=>`<label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" value="${b}" class="portfolio-bulan rounded border-gray-300 text-orange-500" ${data?.bulan_sibuk?.includes(b)?'checked':''}> <span class="text-gray-700">${b}</span></label>`).join('')}
                 </div>
             </div>
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1">10. Jumlah Staf Yang Terlibat</label>
                 <select class="portfolio-staf w-full rounded-md border border-gray-300 px-4 py-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
                     <option value="">-- Pilih --</option>
-                    ${['1 orang','2 orang','3 orang','4 orang','5 orang atau lebih'].map(v => `<option value="${v}" ${data?.jumlah_staf === v ? 'selected' : ''}>${v}</option>`).join('')}
+                    ${['1 orang','2 orang','3 orang','4 orang','5 orang atau lebih'].map(v=>`<option value="${v}" ${data?.jumlah_staf===v?'selected':''}>${v}</option>`).join('')}
                 </select>
             </div>
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1">11. Beban tinggi?</label>
                 <select class="portfolio-beban w-full rounded-md border border-gray-300 px-4 py-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
                     <option value="">-- Pilih --</option>
-                    <option value="Ya" ${data?.beban_tinggi === 'Ya' ? 'selected' : ''}>Ya</option>
-                    <option value="Tidak" ${data?.beban_tinggi === 'Tidak' ? 'selected' : ''}>Tidak</option>
+                    <option value="Ya" ${data?.beban_tinggi==='Ya'?'selected':''}>Ya</option>
+                    <option value="Tidak" ${data?.beban_tinggi==='Tidak'?'selected':''}>Tidak</option>
                 </select>
             </div>
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1">12. Penglibatan Agensi lain?</label>
                 <select class="portfolio-penglibatan w-full rounded-md border border-gray-300 px-4 py-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
                     <option value="">-- Pilih --</option>
-                    <option value="Ya" ${data?.penglibatan_agensi === 'Ya' ? 'selected' : ''}>Ya</option>
-                    <option value="Tidak" ${data?.penglibatan_agensi === 'Tidak' ? 'selected' : ''}>Tidak</option>
+                    <option value="Ya" ${data?.penglibatan_agensi==='Ya'?'selected':''}>Ya</option>
+                    <option value="Tidak" ${data?.penglibatan_agensi==='Tidak'?'selected':''}>Tidak</option>
                 </select>
             </div>
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1">13. Diserahkan kepada Unit Lain?</label>
                 <select class="portfolio-serah w-full rounded-md border border-gray-300 px-4 py-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none"
-                    onchange="this.closest('.portfolio-section').querySelector('.q14-container').classList.toggle('hidden', this.value !== 'Ya')">
+                    onchange="this.closest('.portfolio-section').querySelector('.q14-container').classList.toggle('hidden', this.value!=='Ya')">
                     <option value="">-- Pilih --</option>
-                    <option value="Ya" ${data?.serah_unit === 'Ya' ? 'selected' : ''}>Ya</option>
-                    <option value="Tidak" ${data?.serah_unit === 'Tidak' ? 'selected' : ''}>Tidak</option>
+                    <option value="Ya" ${data?.serah_unit==='Ya'?'selected':''}>Ya</option>
+                    <option value="Tidak" ${data?.serah_unit==='Tidak'?'selected':''}>Tidak</option>
                 </select>
             </div>
-            <div class="md:col-span-2 q14-container ${data?.serah_unit === 'Ya' ? '' : 'hidden'}">
+            <div class="md:col-span-2 q14-container ${data?.serah_unit==='Ya'?'':'hidden'}">
                 <label class="block text-sm font-semibold text-gray-700 mb-1">14. Jika Ya, cadangan serah kepada siapa?</label>
-                <input type="text" class="portfolio-cadangan-serah w-full rounded-md border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" value="${data?.cadangan_serah || ''}">
+                <input type="text" class="portfolio-cadangan-serah w-full rounded-md border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" value="${data?.cadangan_serah||''}">
             </div>
         </div>`;
         container.appendChild(div);
     }
 
+    /* ══════════════════════════════════════════
+       FORM SUBMIT
+    ══════════════════════════════════════════ */
     async function handleFormSubmit(e) {
         e.preventDefault();
-        if (!currentUser) return showMessage("Sila log masuk dahulu.", true);
-        const btn  = document.getElementById('submit-btn');
+        if (!currentUser) return showMessage("Sila log masuk dahulu.",true);
+        const btn = document.getElementById('submit-btn');
         const orig = btn.innerHTML;
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Menyimpan…';
 
         try {
             const { email, uid } = currentUser;
-            const nama     = document.getElementById('nama').value;
-            const unit     = document.getElementById('unit').value;
+            const nama = document.getElementById('nama').value;
+            const unit = document.getElementById('unit').value;
             const sections = document.querySelectorAll('.portfolio-section');
 
             const collect = s => ({
                 nama, unit,
                 nama_projek:        s.querySelector('.portfolio-nama').value,
-                tanggungjawab:      Array.from(s.querySelectorAll('.portfolio-tanggungjawab:checked')).map(c => c.value),
-                impak:              Array.from(s.querySelectorAll('.portfolio-impak:checked')).map(c => c.value),
+                tanggungjawab:      Array.from(s.querySelectorAll('.portfolio-tanggungjawab:checked')).map(c=>c.value),
+                impak:              Array.from(s.querySelectorAll('.portfolio-impak:checked')).map(c=>c.value),
                 kekerapan:          s.querySelector('.portfolio-kekerapan').value,
-                bulan_sibuk:        Array.from(s.querySelectorAll('.portfolio-bulan:checked')).map(c => c.value),
-                jam_seminggu:       parseFloat(s.querySelector('.portfolio-jam').value) || 0,
+                bulan_sibuk:        Array.from(s.querySelectorAll('.portfolio-bulan:checked')).map(c=>c.value),
+                jam_seminggu:       parseFloat(s.querySelector('.portfolio-jam').value)||0,
                 jumlah_staf:        s.querySelector('.portfolio-staf').value,
                 beban_tinggi:       s.querySelector('.portfolio-beban').value,
                 penglibatan_agensi: s.querySelector('.portfolio-penglibatan').value,
@@ -909,102 +984,116 @@
             });
 
             if (editingDocId) {
-                await updateDoc(doc(db, "portfolios", editingDocId), collect(sections[0]));
+                await updateDoc(doc(db,"portfolios",editingDocId), collect(sections[0]));
                 showMessage("Rekod berjaya dikemaskini!");
                 cancelEditMode();
                 _switchTabCore('mydata');
             } else {
                 await Promise.all(Array.from(sections).map(s =>
-                    addDoc(collection(db, "portfolios"), { ...collect(s), uid, email, timestamp: serverTimestamp() })
+                    addDoc(collection(db,"portfolios"), { ...collect(s), uid, email, timestamp: serverTimestamp() })
                 ));
                 showMessage("Maklumat berjaya direkodkan!");
                 document.getElementById('beban-form').reset();
                 document.getElementById('email').value = email;
                 document.getElementById('portfolio-container').innerHTML = '';
-                formCount = 0;
-                generatePortfolioForm();
+                formCount = 0; generatePortfolioForm();
                 _switchTabCore('mydata');
             }
         } catch (err) {
             console.error(err);
-            showMessage("Gagal menyimpan data.", true);
+            showMessage("Gagal menyimpan data.",true);
         } finally {
-            btn.disabled  = false;
-            btn.innerHTML = orig;
+            btn.disabled = false; btn.innerHTML = orig;
         }
     }
 
+    /* ══════════════════════════════════════════
+       PROCESS DASHBOARD DATA
+    ══════════════════════════════════════════ */
     function processData(allData, filterVal = '') {
         const data = filterVal ? allData.filter(d => d.unit === filterVal) : allData;
 
         let totalHours = 0, highBurden = 0;
         const staffSet = new Set();
         data.forEach(d => {
-            totalHours += (d.jam_seminggu || 0);
+            totalHours += (d.jam_seminggu||0);
             if (d.beban_tinggi === 'Ya') highBurden++;
             if (d.nama) staffSet.add(d.nama.toLowerCase().trim());
         });
 
-        const staffCount = staffSet.size || 1;
-        const maxCap     = staffCount * 40;
-        const wlPct      = (totalHours / maxCap) * 100;
-        const burdenPct  = data.length > 0 ? (highBurden / data.length) * 100 : 0;
+        const staffCount   = staffSet.size || 1;
+        const maxCap       = staffCount * 40;
+        const wlPct        = (totalHours / maxCap) * 100;
+        const burdenPct    = data.length > 0 ? (highBurden / data.length) * 100 : 0;
 
-        document.getElementById('kpi-total-hours').innerText  = totalHours.toFixed(1);
-        document.getElementById('kpi-hours-badge').innerText  = `${data.length} Portfolio`;
-        document.getElementById('kpi-hours-bar').style.width  = Math.min(100, (totalHours / (maxCap || 1)) * 100) + '%';
+        /* KPI card 1 */
+        document.getElementById('kpi-total-hours').innerText   = totalHours.toFixed(1);
+        document.getElementById('kpi-hours-badge').innerText   = `${data.length} Portfolio`;
+        document.getElementById('kpi-hours-bar').style.width   = Math.min(100, (totalHours/(maxCap||1))*100) + '%';
 
-        document.getElementById('kpi-high-burden').innerText  = highBurden;
-        document.getElementById('kpi-burden-badge').innerText = `${burdenPct.toFixed(0)}% daripada total`;
-        document.getElementById('kpi-burden-bar').style.width = Math.min(100, burdenPct) + '%';
+        /* KPI card 2 */
+        document.getElementById('kpi-high-burden').innerText   = highBurden;
+        document.getElementById('kpi-burden-badge').innerText  = `${burdenPct.toFixed(0)}% daripada total`;
+        document.getElementById('kpi-burden-bar').style.width  = Math.min(100, burdenPct) + '%';
 
+        /* KPI card 3 */
         const wlEl = document.getElementById('kpi-workload-index');
-        wlEl.innerText  = isNaN(wlPct) ? '0%' : wlPct.toFixed(1) + '%';
-        wlEl.className  = wlPct > 100 ? 'text-4xl font-black leading-none text-red-600'
-                        : wlPct > 80  ? 'text-4xl font-black leading-none text-amber-500'
-                        :               'text-4xl font-black leading-none text-emerald-600';
-        document.getElementById('kpi-index-badge').innerText  = `${staffCount} Staf`;
+        wlEl.innerText   = isNaN(wlPct) ? '0%' : wlPct.toFixed(1) + '%';
+        wlEl.className   = wlPct > 100 ? 'text-4xl font-black leading-none text-red-600'
+                         : wlPct > 80  ? 'text-4xl font-black leading-none text-amber-500'
+                         :               'text-4xl font-black leading-none text-emerald-600';
+        document.getElementById('kpi-index-badge').innerText   = `${staffCount} Staf`;
         const iBar = document.getElementById('kpi-index-bar');
         iBar.style.width      = Math.min(100, wlPct) + '%';
         iBar.style.background = wlPct > 100 ? '#ef4444' : wlPct > 80 ? '#f59e0b' : '#10b981';
 
+        /* charts */
         drawTop10Chart(data);
-        drawUnitDonut(allData);
+        drawUnitDonut(allData);   /* always full data for unit comparison */
         drawPeakMonths(data);
         drawFrequency(data);
         drawTop5Staff(data);
+
+        /* tables */
         drawBebanTinggiTable(data);
         drawSerahTugasTable(data);
         drawMainTable(data);
     }
 
+    /* ══════════════════════════════════════════
+       CHART FUNCTIONS
+    ══════════════════════════════════════════ */
     function drawTop10Chart(data) {
         destroyChart('top10');
         const canvas = document.getElementById('canvas_top10');
         if (!canvas) return;
+
         const map = {};
         data.forEach(d => {
-            const lbl = (d.nama_projek || 'Tiada Nama').substring(0, 36);
-            map[lbl]  = (map[lbl] || 0) + (d.jam_seminggu || 0);
+            const lbl = (d.nama_projek||'Tiada Nama').substring(0,36);
+            map[lbl] = (map[lbl]||0) + (d.jam_seminggu||0);
         });
-        const sorted = Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 10);
-        if (!sorted.length) { setEmpty('empty_top10', true); return; }
-        setEmpty('empty_top10', false);
-        const colors = sorted.map((_, i) =>
-            i === 0 ? 'rgba(239,68,68,.85)' :
-            i === 1 ? 'rgba(249,115,22,.85)' :
-            i === 2 ? 'rgba(245,158,11,.85)' :
-                      `rgba(59,130,246,${.85 - i * .05})`
+        const sorted = Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,10);
+
+        if (!sorted.length) { setEmpty('empty_top10',true); return; }
+        setEmpty('empty_top10',false);
+
+        const colors = sorted.map((_,i) =>
+            i===0 ? 'rgba(239,68,68,.85)' :
+            i===1 ? 'rgba(249,115,22,.85)' :
+            i===2 ? 'rgba(245,158,11,.85)' :
+                    `rgba(59,130,246,${.85-i*.05})`
         );
+
         chartInstances['top10'] = new Chart(canvas, {
             type: 'bar',
-            data: { labels: sorted.map(i => i[0]), datasets: [{ data: sorted.map(i => i[1]), backgroundColor: colors, borderRadius: 5, borderSkipped: false }] },
+            data: { labels: sorted.map(i=>i[0]), datasets: [{ data: sorted.map(i=>i[1]), backgroundColor: colors, borderRadius: 5, borderSkipped: false }] },
             options: {
                 indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.parsed.x} jam/minggu` } } },
+                plugins: { legend: { display:false }, tooltip: { callbacks: { label: c => ` ${c.parsed.x} jam/minggu` } } },
                 scales: {
-                    x: { grid: { color: 'rgba(0,0,0,.04)' }, ticks: { font: { size: 11 } }, title: { display: true, text: 'Jam / Minggu', font: { size: 10 } } },
-                    y: { grid: { display: false }, ticks: { font: { size: 10.5 } } }
+                    x: { grid: { color:'rgba(0,0,0,.04)' }, ticks: { font:{size:11} }, title: { display:true, text:'Jam / Minggu', font:{size:10} } },
+                    y: { grid: { display:false }, ticks: { font:{size:10.5} } }
                 }
             }
         });
@@ -1014,18 +1103,20 @@
         destroyChart('unitDonut');
         const canvas = document.getElementById('canvas_unit_donut');
         if (!canvas) return;
+
         const map = {};
-        data.forEach(d => map[d.unit || 'Lain-lain'] = (map[d.unit || 'Lain-lain'] || 0) + (d.jam_seminggu || 0));
-        const sorted = Object.entries(map).sort((a, b) => b[1] - a[1]);
-        if (!sorted.length) { setEmpty('empty_unit_donut', true); return; }
-        setEmpty('empty_unit_donut', false);
+        data.forEach(d => map[d.unit||'Lain-lain'] = (map[d.unit||'Lain-lain']||0) + (d.jam_seminggu||0));
+        const sorted = Object.entries(map).sort((a,b)=>b[1]-a[1]);
+        if (!sorted.length) { setEmpty('empty_unit_donut',true); return; }
+        setEmpty('empty_unit_donut',false);
+
         chartInstances['unitDonut'] = new Chart(canvas, {
             type: 'doughnut',
-            data: { labels: sorted.map(i => i[0]), datasets: [{ data: sorted.map(i => i[1]), backgroundColor: PAL, borderWidth: 2, borderColor: '#fff', hoverBorderWidth: 3 }] },
+            data: { labels: sorted.map(i=>i[0]), datasets: [{ data: sorted.map(i=>i[1]), backgroundColor: PAL, borderWidth: 2, borderColor:'#fff', hoverBorderWidth:3 }] },
             options: {
-                responsive: true, maintainAspectRatio: false, cutout: '62%',
+                responsive:true, maintainAspectRatio:false, cutout:'62%',
                 plugins: {
-                    legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 10, padding: 8 } },
+                    legend: { position:'bottom', labels:{ font:{size:10}, boxWidth:10, padding:8 } },
                     tooltip: { callbacks: { label: c => ` ${c.label}: ${c.parsed} jam` } }
                 }
             }
@@ -1036,28 +1127,31 @@
         destroyChart('peakMonths');
         const canvas = document.getElementById('canvas_peak_months');
         if (!canvas) return;
+
         const months = ['Januari','Februari','Mac','April','Mei','Jun','Julai','Ogos','September','Oktober','November','Disember'];
-        const map    = {}; months.forEach(m => map[m] = 0);
-        data.forEach(d => { if (d.bulan_sibuk) d.bulan_sibuk.forEach(b => { if (b !== 'Tiada' && map[b] !== undefined) map[b]++; }); });
-        if (!data.length) { setEmpty('empty_peak_months', true); return; }
-        setEmpty('empty_peak_months', false);
+        const map = {}; months.forEach(m => map[m]=0);
+        data.forEach(d => { if(d.bulan_sibuk) d.bulan_sibuk.forEach(b => { if(b!=='Tiada'&&map[b]!==undefined) map[b]++; }); });
+
+        if (!data.length) { setEmpty('empty_peak_months',true); return; }
+        setEmpty('empty_peak_months',false);
+
         chartInstances['peakMonths'] = new Chart(canvas, {
             type: 'line',
             data: {
-                labels: months.map(m => m.substring(0, 3)),
+                labels: months.map(m=>m.substring(0,3)),
                 datasets: [{
-                    data: months.map(m => map[m]),
-                    borderColor: '#f97316', backgroundColor: 'rgba(249,115,22,.08)',
-                    fill: true, tension: 0.4, borderWidth: 2.5,
-                    pointBackgroundColor: '#f97316', pointRadius: 4, pointHoverRadius: 6
+                    data: months.map(m=>map[m]),
+                    borderColor:'#f97316', backgroundColor:'rgba(249,115,22,.08)',
+                    fill:true, tension:0.4, borderWidth:2.5,
+                    pointBackgroundColor:'#f97316', pointRadius:4, pointHoverRadius:6
                 }]
             },
             options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.parsed.y} aktiviti` } } },
+                responsive:true, maintainAspectRatio:false,
+                plugins: { legend:{display:false}, tooltip:{ callbacks:{ label:c=>` ${c.parsed.y} aktiviti` } } },
                 scales: {
-                    x: { grid: { display: false }, ticks: { font: { size: 11 } } },
-                    y: { grid: { color: 'rgba(0,0,0,.04)' }, ticks: { precision: 0, font: { size: 11 } }, beginAtZero: true }
+                    x: { grid:{display:false}, ticks:{font:{size:11}} },
+                    y: { grid:{color:'rgba(0,0,0,.04)'}, ticks:{precision:0,font:{size:11}}, beginAtZero:true }
                 }
             }
         });
@@ -1067,22 +1161,24 @@
         destroyChart('frequency');
         const canvas = document.getElementById('canvas_frequency');
         if (!canvas) return;
+
         const map = {};
-        data.forEach(d => { if (d.kekerapan) map[d.kekerapan] = (map[d.kekerapan] || 0) + 1; });
-        const entries = Object.entries(map).sort((a, b) => b[1] - a[1]);
-        if (!entries.length) { setEmpty('empty_frequency', true); return; }
-        setEmpty('empty_frequency', false);
+        data.forEach(d => { if(d.kekerapan) map[d.kekerapan]=(map[d.kekerapan]||0)+1; });
+        const entries = Object.entries(map).sort((a,b)=>b[1]-a[1]);
+        if (!entries.length) { setEmpty('empty_frequency',true); return; }
+        setEmpty('empty_frequency',false);
+
         chartInstances['frequency'] = new Chart(canvas, {
             type: 'doughnut',
             data: {
-                labels: entries.map(e => e[0]),
-                datasets: [{ data: entries.map(e => e[1]), backgroundColor: ['#10b981','#3b82f6','#8b5cf6','#f59e0b','#ef4444','#06b6d4'], borderWidth: 2, borderColor: '#fff' }]
+                labels: entries.map(e=>e[0]),
+                datasets: [{ data: entries.map(e=>e[1]), backgroundColor:['#10b981','#3b82f6','#8b5cf6','#f59e0b','#ef4444','#06b6d4'], borderWidth:2, borderColor:'#fff' }]
             },
             options: {
-                responsive: true, maintainAspectRatio: false, cutout: '55%',
+                responsive:true, maintainAspectRatio:false, cutout:'55%',
                 plugins: {
-                    legend: { position: 'bottom', labels: { font: { size: 10.5 }, boxWidth: 10, padding: 8 } },
-                    tooltip: { callbacks: { label: c => ` ${c.label}: ${c.parsed} aktiviti` } }
+                    legend: { position:'bottom', labels:{ font:{size:10.5}, boxWidth:10, padding:8 } },
+                    tooltip: { callbacks:{ label:c=>` ${c.label}: ${c.parsed} aktiviti` } }
                 }
             }
         });
@@ -1092,44 +1188,53 @@
         destroyChart('top5staff');
         const canvas = document.getElementById('canvas_top5_staff');
         if (!canvas) return;
+
         const map = {};
-        data.forEach(d => map[d.nama || 'Rahsia'] = (map[d.nama || 'Rahsia'] || 0) + (d.jam_seminggu || 0));
-        const sorted = Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 5);
-        if (!sorted.length) { setEmpty('empty_top5_staff', true); return; }
-        setEmpty('empty_top5_staff', false);
+        data.forEach(d => map[d.nama||'Rahsia']=(map[d.nama||'Rahsia']||0)+(d.jam_seminggu||0));
+        const sorted = Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,5);
+        if (!sorted.length) { setEmpty('empty_top5_staff',true); return; }
+        setEmpty('empty_top5_staff',false);
+
         chartInstances['top5staff'] = new Chart(canvas, {
             type: 'bar',
             data: {
-                labels: sorted.map(i => i[0]),
-                datasets: [{ data: sorted.map(i => i[1]), backgroundColor: sorted.map((_, i) => `rgba(245,158,11,${1 - i * .15})`), borderRadius: 6, borderSkipped: false }]
+                labels: sorted.map(i=>i[0]),
+                datasets: [{
+                    data: sorted.map(i=>i[1]),
+                    backgroundColor: sorted.map((_,i) => `rgba(245,158,11,${1-i*.15})`),
+                    borderRadius:6, borderSkipped:false
+                }]
             },
             options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.parsed.y} jam/minggu` } } },
+                responsive:true, maintainAspectRatio:false,
+                plugins: { legend:{display:false}, tooltip:{ callbacks:{ label:c=>` ${c.parsed.y} jam/minggu` } } },
                 scales: {
-                    x: { grid: { display: false }, ticks: { font: { size: 11 } } },
-                    y: { grid: { color: 'rgba(0,0,0,.04)' }, ticks: { font: { size: 11 } }, beginAtZero: true, title: { display: true, text: 'Jam / Minggu', font: { size: 10 } } }
+                    x: { grid:{display:false}, ticks:{font:{size:11}} },
+                    y: { grid:{color:'rgba(0,0,0,.04)'}, ticks:{font:{size:11}}, beginAtZero:true, title:{display:true,text:'Jam / Minggu',font:{size:10}} }
                 }
             }
         });
     }
 
+    /* ══════════════════════════════════════════
+       ACTIONABLE TABLES
+    ══════════════════════════════════════════ */
     function drawBebanTinggiTable(data) {
         const tbody = document.getElementById('tbody-beban-tinggi');
         const empty = document.getElementById('beban-empty');
         if (!tbody) return;
-        const rows = data.filter(d => d.beban_tinggi === 'Ya').sort((a, b) => (b.jam_seminggu || 0) - (a.jam_seminggu || 0));
+        const rows = data.filter(d => d.beban_tinggi === 'Ya').sort((a,b) => (b.jam_seminggu||0)-(a.jam_seminggu||0));
         document.getElementById('beban-tinggi-count').innerText = `${rows.length} rekod`;
         tbody.innerHTML = '';
         if (!rows.length) { empty.classList.remove('hidden'); return; }
         empty.classList.add('hidden');
-        rows.slice(0, 8).forEach(d => {
+        rows.slice(0,8).forEach(d => {
             const tr = document.createElement('tr');
             tr.className = 'data-tr';
             tr.innerHTML = `
-                <td class="px-4 py-3 font-medium text-slate-700 max-w-[180px] truncate" title="${d.nama_projek || ''}">${d.nama_projek || '-'}</td>
-                <td class="px-4 py-3 text-slate-500 text-xs leading-tight">${d.nama || '-'}<br><span class="text-slate-400">${d.unit || '-'}</span></td>
-                <td class="px-4 py-3 text-right font-bold text-red-600">${d.jam_seminggu || 0}</td>`;
+                <td class="px-4 py-3 font-medium text-slate-700 max-w-[180px] truncate" title="${d.nama_projek||''}">${d.nama_projek||'-'}</td>
+                <td class="px-4 py-3 text-slate-500 text-xs leading-tight">${d.nama||'-'}<br><span class="text-slate-400">${d.unit||'-'}</span></td>
+                <td class="px-4 py-3 text-right font-bold text-red-600">${d.jam_seminggu||0}</td>`;
             tbody.appendChild(tr);
         });
     }
@@ -1143,22 +1248,25 @@
         tbody.innerHTML = '';
         if (!rows.length) { empty.classList.remove('hidden'); return; }
         empty.classList.add('hidden');
-        rows.slice(0, 8).forEach(d => {
+        rows.slice(0,8).forEach(d => {
             const tr = document.createElement('tr');
             tr.className = 'data-tr';
             tr.innerHTML = `
-                <td class="px-4 py-3 font-medium text-slate-700 max-w-[150px] truncate" title="${d.nama_projek || ''}">${d.nama_projek || '-'}</td>
-                <td class="px-4 py-3 text-slate-500 text-xs">${d.unit || '-'}</td>
-                <td class="px-4 py-3 text-xs font-semibold text-amber-700">${d.cadangan_serah || '<span class="text-slate-400 font-normal">Tiada maklumat</span>'}</td>`;
+                <td class="px-4 py-3 font-medium text-slate-700 max-w-[150px] truncate" title="${d.nama_projek||''}">${d.nama_projek||'-'}</td>
+                <td class="px-4 py-3 text-slate-500 text-xs">${d.unit||'-'}</td>
+                <td class="px-4 py-3 text-xs font-semibold text-amber-700">${d.cadangan_serah||'<span class="text-slate-400 font-normal">Tiada maklumat</span>'}</td>`;
             tbody.appendChild(tr);
         });
     }
 
+    /* ══════════════════════════════════════════
+       MAIN DATA TABLE + PAGINATION
+    ══════════════════════════════════════════ */
     function drawMainTable(data) {
-        tableAllData      = data;
+        tableAllData = data;
         tableFilteredData = [...data];
         document.getElementById('table-search').value = '';
-        tableCurrentPage  = 1;
+        tableCurrentPage = 1;
         renderTablePage();
     }
 
@@ -1167,6 +1275,7 @@
         const empty = document.getElementById('main-table-empty');
         if (!tbody) return;
         tbody.innerHTML = '';
+
         if (!tableFilteredData.length) {
             empty.classList.remove('hidden');
             document.getElementById('table-page-info').innerText = '0 rekod';
@@ -1175,64 +1284,75 @@
             return;
         }
         empty.classList.add('hidden');
+
         const totalPages = Math.ceil(tableFilteredData.length / PAGE_SIZE);
         const start      = (tableCurrentPage - 1) * PAGE_SIZE;
-        tableFilteredData.slice(start, start + PAGE_SIZE).forEach((d, i) => {
+        const pageData   = tableFilteredData.slice(start, start + PAGE_SIZE);
+
+        pageData.forEach((d, i) => {
             const tr = document.createElement('tr');
             tr.className = 'data-tr';
-            const badge  = d.beban_tinggi === 'Ya'
+            const bebanBadge = d.beban_tinggi === 'Ya'
                 ? '<span class="badge badge-red"><i class="fas fa-exclamation-circle"></i>Tinggi</span>'
                 : d.beban_tinggi === 'Tidak'
                     ? '<span class="badge badge-green"><i class="fas fa-check-circle"></i>Normal</span>'
                     : '<span class="badge badge-slate">—</span>';
             tr.innerHTML = `
-                <td class="px-4 py-3 text-slate-400 text-xs">${start + i + 1}</td>
-                <td class="px-4 py-3 font-semibold text-slate-800">${d.nama || '-'}</td>
-                <td class="px-4 py-3 text-slate-500 text-xs">${d.unit || '-'}</td>
-                <td class="px-4 py-3 text-slate-700">${d.nama_projek || '-'}</td>
-                <td class="px-4 py-3 text-slate-500 text-xs">${d.kekerapan || '-'}</td>
-                <td class="px-4 py-3 text-center font-bold text-blue-600">${d.jam_seminggu || 0}</td>
-                <td class="px-4 py-3 text-center">${badge}</td>`;
+                <td class="px-4 py-3 text-slate-400 text-xs">${start+i+1}</td>
+                <td class="px-4 py-3 font-semibold text-slate-800">${d.nama||'-'}</td>
+                <td class="px-4 py-3 text-slate-500 text-xs">${d.unit||'-'}</td>
+                <td class="px-4 py-3 text-slate-700">${d.nama_projek||'-'}</td>
+                <td class="px-4 py-3 text-slate-500 text-xs">${d.kekerapan||'-'}</td>
+                <td class="px-4 py-3 text-center font-bold text-blue-600">${d.jam_seminggu||0}</td>
+                <td class="px-4 py-3 text-center">${bebanBadge}</td>`;
             tbody.appendChild(tr);
         });
-        document.getElementById('table-page-info').innerText  = `Halaman ${tableCurrentPage} / ${totalPages} (${tableFilteredData.length} rekod)`;
+
+        document.getElementById('table-page-info').innerText = `Halaman ${tableCurrentPage} / ${totalPages} (${tableFilteredData.length} rekod)`;
         document.getElementById('table-prev').disabled = tableCurrentPage <= 1;
         document.getElementById('table-next').disabled = tableCurrentPage >= totalPages;
     }
 
     window.changePage = function(dir) {
-        const total  = Math.ceil(tableFilteredData.length / PAGE_SIZE);
+        const total = Math.ceil(tableFilteredData.length / PAGE_SIZE);
         tableCurrentPage = Math.max(1, Math.min(total, tableCurrentPage + dir));
         renderTablePage();
     };
 
+    /* ══════════════════════════════════════════
+       CSV EXPORT
+    ══════════════════════════════════════════ */
     window.downloadCSV = function() {
-        if (!globalData.length) return showMessage("Tiada data untuk dimuat turun.", true);
-        const fv   = document.getElementById('filter-unit')?.value || '';
-        const rows = fv ? globalData.filter(d => d.unit === fv) : globalData;
-        if (!rows.length) return showMessage("Tiada data untuk saringan ini.", true);
-        const esc     = s => `"${String(s ?? '').replace(/"/g, '""')}"`;
+        if (!globalData.length) return showMessage("Tiada data untuk dimuat turun.",true);
+        const fv = document.getElementById('filter-unit')?.value||'';
+        const rows = fv ? globalData.filter(d=>d.unit===fv) : globalData;
+        if (!rows.length) return showMessage("Tiada data untuk saringan ini.",true);
+
+        const esc = s => `"${String(s??'').replace(/"/g,'""')}"`;
         const headers = ["Nama","Email","Unit","Nama Portfolio","Tanggungjawab","Impak","Kekerapan","Jam Seminggu","Bulan Sibuk","Jumlah Staf","Beban Tinggi","Penglibatan Agensi","Serah Unit","Cadangan Serah","Tarikh Hantar"];
         let csv = headers.join(',') + '\n';
         rows.forEach(d => {
-            csv += [esc(d.nama), esc(d.email), esc(d.unit), esc(d.nama_projek),
-                    esc(Array.isArray(d.tanggungjawab) ? d.tanggungjawab.join(' ; ') : d.tanggungjawab),
-                    esc(Array.isArray(d.impak)         ? d.impak.join(' ; ')         : d.impak),
-                    esc(d.kekerapan), esc(d.jam_seminggu),
-                    esc(Array.isArray(d.bulan_sibuk)   ? d.bulan_sibuk.join(' ; ')   : d.bulan_sibuk),
-                    esc(d.jumlah_staf), esc(d.beban_tinggi), esc(d.penglibatan_agensi),
-                    esc(d.serah_unit), esc(d.cadangan_serah),
-                    esc(d.timestamp ? new Date(d.timestamp.toMillis()).toLocaleDateString('ms-MY') : '')
+            csv += [esc(d.nama),esc(d.email),esc(d.unit),esc(d.nama_projek),
+                    esc(Array.isArray(d.tanggungjawab)?d.tanggungjawab.join(' ; '):d.tanggungjawab),
+                    esc(Array.isArray(d.impak)?d.impak.join(' ; '):d.impak),
+                    esc(d.kekerapan),esc(d.jam_seminggu),
+                    esc(Array.isArray(d.bulan_sibuk)?d.bulan_sibuk.join(' ; '):d.bulan_sibuk),
+                    esc(d.jumlah_staf),esc(d.beban_tinggi),esc(d.penglibatan_agensi),
+                    esc(d.serah_unit),esc(d.cadangan_serah),
+                    esc(d.timestamp?new Date(d.timestamp.toMillis()).toLocaleDateString('ms-MY'):'')
                    ].join(',') + '\n';
         });
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
         const url  = URL.createObjectURL(blob);
         const a    = document.createElement('a');
-        a.href     = url;
-        a.download = `Analisis_Beban_${fv || 'Semua_Unit'}_${new Date().toISOString().split('T')[0]}.csv`;
+        a.href = url;
+        a.download = `Analisis_Beban_${fv||'Semua_Unit'}_${new Date().toISOString().split('T')[0]}.csv`;
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
     };
 
+    /* ══════════════════════════════════════════
+       FONT SIZE & DARK MODE
+    ══════════════════════════════════════════ */
     let currentFontSize = 100;
     window.changeFontSize = function(action) {
         if (action === -1 && currentFontSize > 80)  currentFontSize -= 10;
@@ -1242,21 +1362,22 @@
     };
 
     window.toggleDarkMode = function() {
-        const body = document.body;
-        const icon = document.querySelector('#btn-dark i');
-        const btn  = document.getElementById('btn-dark');
+        const body    = document.body;
+        const icon    = document.querySelector('#btn-dark i');
+        const btn     = document.getElementById('btn-dark');
         body.classList.toggle('dark-mode');
         if (body.classList.contains('dark-mode')) {
-            icon.classList.replace('fa-moon', 'fa-sun');
-            btn.classList.replace('text-yellow-400', 'text-yellow-200');
-            btn.classList.replace('bg-slate-800', 'bg-slate-600');
+            icon.classList.replace('fa-moon','fa-sun');
+            btn.classList.replace('text-yellow-400','text-yellow-200');
+            btn.classList.replace('bg-slate-800','bg-slate-600');
         } else {
-            icon.classList.replace('fa-sun', 'fa-moon');
-            btn.classList.replace('text-yellow-200', 'text-yellow-400');
-            btn.classList.replace('bg-slate-600', 'bg-slate-800');
+            icon.classList.replace('fa-sun','fa-moon');
+            btn.classList.replace('text-yellow-200','text-yellow-400');
+            btn.classList.replace('bg-slate-600','bg-slate-800');
         }
     };
 
+    /* ── START ── */
     document.addEventListener('DOMContentLoaded', initApp);
 </script>
 </body>
