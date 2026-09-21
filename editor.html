@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor Data Beban Kerja (Excel View) - Admin</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome 6 Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+
+        .font-mono-num {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Excel-like grid cell styling */
+        .excel-table {
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .excel-cell {
+            position: relative;
+            border-right: 1px solid #e2e8f0;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 4px 8px;
+            font-size: 0.8125rem;
+            line-height: 1.35;
+            transition: background-color 0.15s, box-shadow 0.15s;
+        }
+
+        .excel-cell:focus-within {
+            outline: 2px solid #2563eb;
+            outline-offset: -1px;
+            background-color: #ffffff !important;
+            z-index: 10;
+        }
+
+        .excel-cell input, .excel-cell select {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            border: none;
+            outline: none;
+            font-size: 0.8125rem;
+            padding: 2px 4px;
+            color: inherit;
+        }
+
+        .excel-cell input:focus, .excel-cell select:focus {
+            background: #ffffff;
+            color: #0f172a;
+        }
+
+        /* Row status indicators */
+        tr.dirty-row {
+            background-color: #fffbeb !important;
+        }
+
+        tr.new-row {
+            background-color: #f0fdf4 !important;
+        }
+
+        tr.delete-staged {
+            opacity: 0.4;
+            background-color: #fef2f2 !important;
+            text-decoration: line-through;
+        }
+
+        /* Dark mode palette adjustments */
+        body.dark-mode {
+            background-color: #0b0f19 !important;
+            color: #e2e8f0 !important;
+        }
+
+        body.dark-mode .bg-white {
+            background-color: #111827 !important;
+            border-color: #1f2937 !important;
+        }
+
+        body.dark-mode .excel-cell {
+            border-right: 1px solid #1f2937;
+            border-bottom: 1px solid #1f2937;
+        }
+
+        body.dark-mode .excel-cell:focus-within {
+            outline: 2px solid #3b82f6;
+            background-color: #1f2937 !important;
+        }
+
+        body.dark-mode .excel-cell input, body.dark-mode .excel-cell select {
+            color: #f3f4f6;
+        }
+
+        body.dark-mode .excel-cell input:focus, body.dark-mode .excel-cell select:focus {
+            background: #1e293b;
+            color: #ffffff;
+        }
+
+        body.dark-mode tr.dirty-row {
+            background-color: #2b1f07 !important;
+        }
+
+        body.dark-mode tr.new-row {
+            background-color: #072714 !important;
+        }
+
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        body.dark-mode ::-webkit-scrollbar-track {
+            background: #111827;
+        }
+        body.dark-mode ::-webkit-scrollbar-thumb {
+            background: #374151;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden text-slate-800 antialiased">
+    <!-- Custom Notification Toast Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-[100] flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Custom Confirmation Modal (No alert/confirm) -->
+    <div id="custom-modal" class="fixed inset-0 z-[99] hidden items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full border border-slate-200 dark:border-slate-700 overflow-hidden transform transition-all scale-100">
+            <div class="p-6">
+                <div class="flex items-center gap-4">
+                    <div id="modal-icon-bg" class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0 text-xl">
+                        <i id="modal-icon" class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div>
+                        <h3 id="modal-title" class="text-lg font-bold text-slate-900 dark:text-white">Pengesahan Diperlukan</h3>
+                        <p id="modal-message" class="text-sm text-slate-500 dark:text-slate-400 mt-1">Adakah anda pasti mahu melakukan tindakan ini?</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-slate-50 dark:bg-slate-700/50 px-6 py-3.5 flex justify-end gap-3 border-t border-slate-100 dark:border-slate-700">
+                <button id="modal-btn-cancel" class="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition">
+                    Batal
+                </button>
+                <button id="modal-btn-confirm" class="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-red-600 hover:bg-red-700 shadow-sm transition">
+                    Teruskan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Screen 1: Login Box (for unauthenticated users) -->
+    <div id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-md p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700 w-full max-w-md overflow-hidden">
+            <div class="bg-gradient-to-br from-emerald-600 to-teal-800 p-8 text-white text-center">
+                <div class="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-3 backdrop-blur-sm border border-white/20">
+                    <i class="fas fa-file-excel text-3xl text-emerald-300"></i>
+                </div>
+                <h1 class="text-2xl font-black tracking-tight">Portal Editor Excel</h1>
+                <p class="text-emerald-100 text-xs mt-1 font-medium">Sistem Analisis Beban Kerja MOH</p>
+                <div class="mt-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/40 border border-emerald-400/30 text-[11px] font-mono text-emerald-200">
+                    <i class="fas fa-user-shield text-xs"></i> drahmadmuzammil@moh.gov.my
+                </div>
+            </div>
+            <form id="login-form" class="p-8 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5">Alamat Emel</label>
+                    <div class="relative">
+                        <i class="fas fa-envelope absolute left-3.5 top-3 text-slate-400 text-sm"></i>
+                        <input type="email" id="login-email" required placeholder="drahmadmuzammil@moh.gov.my"
+                            value="drahmadmuzammil@moh.gov.my"
+                            class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-sm font-medium outline-none focus:ring-2 focus:ring-emerald-500 transition">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5">Kata Laluan</label>
+                    <div class="relative">
+                        <i class="fas fa-key absolute left-3.5 top-3 text-slate-400 text-sm"></i>
+                        <input type="password" id="login-password" required placeholder="••••••••"
+                            class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-sm font-medium outline-none focus:ring-2 focus:ring-emerald-500 transition">
+                    </div>
+                </div>
+                <button type="submit" id="btn-submit-login"
+                    class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm transition shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2">
+                    <i class="fas fa-sign-in-alt"></i> Log Masuk Pentadbir
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Screen 2: Access Denied / Unauthorized Screen (if logged in with wrong email) -->
+    <div id="unauthorized-screen" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/90 backdrop-blur-md p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-red-200 dark:border-red-900/40 w-full max-w-md p-8 text-center">
+            <div class="w-20 h-20 bg-red-100 dark:bg-red-950/50 text-red-600 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-red-200 dark:border-red-800">
+                <i class="fas fa-ban text-4xl"></i>
+            </div>
+            <h2 class="text-2xl font-black text-slate-900 dark:text-white">Akses Ditolak</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-2">
+                Halaman editor jadual ini dikhaskan eksklusif untuk akaun pentadbir utama:
+            </p>
+            <div class="my-4 p-3 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                drahmadmuzammil@moh.gov.my
+            </div>
+            <p class="text-xs text-slate-400 mb-6">
+                Akaun anda yang sedang aktif: <br><span id="current-denied-email" class="font-bold text-slate-700 dark:text-slate-300"></span>
+            </p>
+            <button id="btn-switch-account"
+                class="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl text-sm transition flex items-center justify-center gap-2">
+                <i class="fas fa-arrow-right-from-bracket"></i> Log Keluar & Guna Emel Sah
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Excel Header & Ribbon Bar -->
+    <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex-none z-30 shadow-sm">
+        <div class="px-4 py-2.5 flex items-center justify-between gap-4">
+            <!-- Left Brand -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-emerald-700 text-white rounded-xl flex items-center justify-center shadow-md shadow-emerald-700/20 font-bold text-lg">
+                    <i class="fas fa-table"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="font-extrabold text-base tracking-tight text-slate-800 dark:text-white">Pengurusan Beban Kerja</h1>
+                        <span class="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-md bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300 border border-emerald-300/40">Excel Editor Mode</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 font-medium">Klik pada mana-mana kotak untuk mengubah nilai terus ke Firestore</p>
+                </div>
+            </div>
+
+            <!-- Middle Status & Action Center -->
+            <div class="flex items-center gap-2">
+                <!-- Change tracking indicator -->
+                <div id="dirty-status-badge" class="hidden items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-xs font-bold animate-pulse">
+                    <i class="fas fa-circle-notch fa-spin"></i>
+                    <span id="dirty-count-text">0 perubahan belum disimpan</span>
+                </div>
+
+                <!-- Save button -->
+                <button id="btn-save-all" onclick="saveAllChanges()" disabled
+                    class="px-4 py-1.5 bg-emerald-600 disabled:opacity-40 disabled:hover:bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed">
+                    <i class="fas fa-cloud-arrow-up"></i> Simpan Semua Perubahan
+                </button>
+
+                <!-- Revert button -->
+                <button id="btn-revert" onclick="revertChanges()" disabled
+                    class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold transition disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed" title="Batalkan perubahan yang belum disimpan">
+                    <i class="fas fa-rotate-left"></i>
+                </button>
+
+                <div class="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
+
+                <!-- Add Row -->
+                <button onclick="addNewRow()" class="px-3 py-1.5 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+                    <i class="fas fa-plus text-xs"></i> Tambah Baris
+                </button>
+
+                <!-- Export CSV -->
+                <button onclick="exportToCsv()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold transition flex items-center gap-1.5">
+                    <i class="fas fa-download text-xs"></i> CSV
+                </button>
+            </div>
+
+            <!-- Right Profile & Theme -->
+            <div class="flex items-center gap-3">
+                <button onclick="toggleDarkMode()" id="theme-toggle-btn" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition" title="Tukar Tema">
+                    <i class="fas fa-moon text-sm text-yellow-500"></i>
+                </button>
+
+                <div class="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-700">
+                    <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200 flex items-center justify-center font-bold text-xs">
+                        AM
+                    </div>
+                    <div class="hidden lg:block text-left">
+                        <p class="text-xs font-bold text-slate-800 dark:text-white leading-tight">Dr. Ahmad Muzammil</p>
+                        <p class="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono font-medium">Admin Berdaftar</p>
+                    </div>
+                    <button onclick="handleLogout()" class="ml-2 text-slate-400 hover:text-red-600 text-xs p-1.5 transition" title="Log Keluar">
+                        <i class="fas fa-power-off text-sm"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ribbon Sub-bar: Search, Filter, and View Controls -->
+        <div class="bg-slate-50 dark:bg-slate-800/60 px-4 py-2 border-t border-slate-200 dark:border-slate-700 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div class="flex items-center gap-3 flex-grow max-w-3xl">
+                <!-- Search -->
+                <div class="relative flex-grow max-w-xs">
+                    <i class="fas fa-search absolute left-3 top-2.5 text-slate-400"></i>
+                    <input type="text" id="filter-search" placeholder="Cari apa sahaja (Nama, Projek, Emel)..."
+                        class="w-full pl-8 pr-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-xs outline-none focus:ring-1 focus:ring-emerald-500">
+                </div>
+
+                <!-- Unit Filter -->
+                <div class="flex items-center gap-1.5">
+                    <span class="text-slate-500 font-semibold">Unit:</span>
+                    <select id="filter-unit-select" class="rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs outline-none focus:ring-1 focus:ring-emerald-500">
+                        <option value="">Semua Unit</option>
+                        <option value="Unit Survelan Klinikal">Unit Survelan Klinikal</option>
+                        <option value="Unit Pengurusan Risiko (Pesakit)">Unit Pengurusan Risiko (Pesakit)</option>
+                        <option value="Unit Pengurusan Risiko (Pekerjaan)">Unit Pengurusan Risiko (Pekerjaan)</option>
+                        <option value="Unit Kawalan Infeksi">Unit Kawalan Infeksi</option>
+                        <option value="Unit Pentadbiran">Unit Pentadbiran</option>
+                        <option value="Timbalan Pengarah">Timbalan Pengarah</option>
+                    </select>
+                </div>
+
+                <!-- Burden Filter -->
+                <div class="flex items-center gap-1.5">
+                    <span class="text-slate-500 font-semibold">Beban:</span>
+                    <select id="filter-burden-select" class="rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs outline-none focus:ring-1 focus:ring-emerald-500">
+                        <option value="">Semua</option>
+                        <option value="Ya">Beban Tinggi Sahaja</option>
+                        <option value="Tidak">Bukan Beban Tinggi</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Quick Stats in toolbar -->
+            <div class="flex items-center gap-4 text-slate-500 dark:text-slate-400">
+                <div>Jumlah Baris: <span id="stat-row-count" class="font-bold text-slate-800 dark:text-white">0</span></div>
+                <div>Jumlah Jam: <span id="stat-hours-count" class="font-bold text-blue-600 dark:text-blue-400 font-mono-num">0</span> jam/mgu</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Excel Grid View Area -->
+    <main class="flex-1 overflow-auto relative bg-slate-200 dark:bg-slate-900" id="table-scroll-container">
+        <!-- Live Loading Overlay -->
+        <div id="table-loading" class="absolute inset-0 bg-white/70 dark:bg-slate-900/80 z-20 flex flex-col items-center justify-center gap-3 backdrop-blur-xs">
+            <div class="w-10 h-10 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
+            <p class="text-xs font-bold text-slate-600 dark:text-slate-300">Menyegerakkan data dari Firestore...</p>
+        </div>
+
+        <table class="excel-table w-full bg-white dark:bg-slate-800 text-left select-text">
+            <!-- Sticky Excel Column Headers -->
+            <thead class="sticky top-0 z-10 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold select-none border-b border-slate-300 dark:border-slate-600 shadow-sm">
+                <tr>
+                    <th class="excel-cell w-10 text-center bg-slate-200/80 dark:bg-slate-700/80 text-slate-500 font-mono text-[10px]">#</th>
+                    <th class="excel-cell min-w-[160px]">Nama Staf</th>
+                    <th class="excel-cell min-w-[180px]">Unit</th>
+                    <th class="excel-cell min-w-[220px]">Nama Projek / Portfolio</th>
+                    <th class="excel-cell min-w-[110px] text-center">Kekerapan</th>
+                    <th class="excel-cell min-w-[100px] text-center">Jam/Minggu</th>
+                    <th class="excel-cell min-w-[100px] text-center">Beban Tinggi?</th>
+                    <th class="excel-cell min-w-[120px] text-center">Bil. Staf</th>
+                    <th class="excel-cell min-w-[130px] text-center">Agensi Lain?</th>
+                    <th class="excel-cell min-w-[120px] text-center">Serah Unit?</th>
+                    <th class="excel-cell min-w-[180px]">Cadangan Serah Kepada</th>
+                    <th class="excel-cell min-w-[180px]">Emel Pengirim</th>
+                    <th class="excel-cell min-w-[160px]">Tanggungjawab</th>
+                    <th class="excel-cell min-w-[140px]">Bulan Sibuk</th>
+                    <th class="excel-cell w-20 text-center">Tindakan</th>
+                </tr>
+            </thead>
+            <!-- Excel Table Body for Editable Rows -->
+            <tbody id="excel-table-body" class="text-xs divide-y divide-slate-200 dark:divide-slate-700">
+                <!-- Rows injected dynamically -->
+            </tbody>
+        </table>
+
+        <!-- Empty state -->
+        <div id="table-empty" class="hidden py-24 text-center text-slate-400">
+            <i class="fas fa-folder-open text-4xl mb-3 opacity-40"></i>
+            <p class="text-sm font-semibold">Tiada rekod yang sepadan dengan carian.</p>
+        </div>
+    </main>
+
+    <!-- Tag Selection Popover / Modal for Tanggungjawab, Impak, Bulan Sibuk -->
+    <div id="tag-picker-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 max-w-md w-full p-6">
+            <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-100 dark:border-slate-700">
+                <h3 id="tag-modal-title" class="font-bold text-sm text-slate-800 dark:text-white">Pilih Pilihan</h3>
+                <button onclick="closeTagPicker()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="tag-checkbox-container" class="grid grid-cols-2 gap-2.5 max-h-60 overflow-y-auto p-1 text-xs">
+                <!-- Checkboxes populated on the fly -->
+            </div>
+            <div class="mt-5 pt-3 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-2">
+                <button onclick="closeTagPicker()" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">Batal</button>
+                <button id="tag-picker-confirm-btn" class="px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700">Gunakan Pilihan</button>
+            </div>
+        </div>
+    </div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { 
+        getAuth, 
+        signInWithEmailAndPassword, 
+        onAuthStateChanged, 
+        signOut 
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { 
+        getFirestore, 
+        collection, 
+        onSnapshot, 
+        doc, 
+        writeBatch, 
+        serverTimestamp 
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // Standard MOH Workload Project Firebase Config
+    const firebaseConfig = {
+        apiKey:            "AIzaSyDS_zr-h8GZlBGRqBdsu-yAlg_h_suwX8Q",
+        authDomain:        "analysis-beban-kerja.firebaseapp.com",
+        projectId:         "analysis-beban-kerja",
+        storageBucket:     "analysis-beban-kerja.firebasestorage.app",
+        messagingSenderId: "1077211482462",
+        appId:             "1:1077211482462:web:f26e4663732cbc2c16e7cf",
+        measurementId:     "G-2891WGDXJX"
+    };
+
+    // STRICT Access Authorization: Only this email can view or edit
+    const AUTHORIZED_ADMIN_EMAIL = "drahmadmuzammil@moh.gov.my".toLowerCase();
+
+    // Application state
+    let app, auth, db;
+    let currentUser = null;
+    let originalDataMap = new Map(); // id -> pristine firestore record
+    let workingDataMap = new Map();  // id -> edited local state
+    let dirtyRecordIds = new Set();  // set of modified record ids
+    let deletedRecordIds = new Set();// set of records queued for removal
+    let newRowCounter = 0;
+
+    // Constants for Select Dropdowns
+    const UNITS = [
+        "Unit Survelan Klinikal",
+        "Unit Pengurusan Risiko (Pesakit)",
+        "Unit Pengurusan Risiko (Pekerjaan)",
+        "Unit Kawalan Infeksi",
+        "Unit Pentadbiran",
+        "Timbalan Pengarah"
+    ];
+
+    const FREQUENCIES = ["Harian", "Mingguan", "Bulanan", "Dwitahunan", "Tahunan", "Bermusim"];
+    const STAFF_COUNTS = ["1 orang", "2 orang", "3 orang", "4 orang", "5 orang atau lebih"];
+    const TJ_OPTIONS = ['Merancang','Memimpin','Menyelaras','Memantau','Menganalisa','Menilai','Membuat keputusan','Mendokumentasi','Mengumpul data','Mengemaskini data'];
+    const MONTHS = ['Januari','Februari','Mac','April','Mei','Jun','Julai','Ogos','September','Oktober','November','Disember','Tiada'];
+
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        const isError = type === 'error';
+        const isWarning = type === 'warning';
+        
+        toast.className = `p-3 px-4 rounded-xl shadow-xl text-white flex items-center gap-3 text-xs font-semibold pointer-events-auto transform transition-all duration-300 translate-y-[-10px] opacity-0 ${
+            isError ? 'bg-red-600' : isWarning ? 'bg-amber-600' : 'bg-emerald-600'
+        }`;
+        
+        const icon = isError ? 'fa-triangle-exclamation' : isWarning ? 'fa-circle-exclamation' : 'fa-circle-check';
+        toast.innerHTML = `<i class="fas ${icon} text-sm"></i> <span>${message}</span>`;
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            toast.classList.remove('translate-y-[-10px]', 'opacity-0');
+        }, 10);
+
+        setTimeout(() => {
+            toast.classList.add('opacity-0', 'translate-y-[-10px]');
+            setTimeout(() => toast.remove(), 300);
+        }, 3500);
+    }
+
+    // Custom confirm dialog (replaces browser confirm())
+    function askConfirmation(title, message, confirmText = 'Teruskan') {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('custom-modal');
+            const titleEl = document.getElementById('modal-title');
+            const msgEl = document.getElementById('modal-message');
+            const confirmBtn = document.getElementById('modal-btn-confirm');
+            const cancelBtn = document.getElementById('modal-btn-cancel');
+
+            titleEl.textContent = title;
+            msgEl.textContent = message;
+            confirmBtn.textContent = confirmText;
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            const cleanUp = () => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                confirmBtn.removeEventListener('click', onConfirm);
+                cancelBtn.removeEventListener('click', onCancel);
+            };
+
+            const onConfirm = () => { cleanUp(); resolve(true); };
+            const onCancel = () => { cleanUp(); resolve(false); };
+
+            confirmBtn.addEventListener('click', onConfirm);
+            cancelBtn.addEventListener('click', onCancel);
+        });
+    }
+
+    async function init() {
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+
+            // Auth form listener
+            document.getElementById('login-form').addEventListener('submit', handleLogin);
+            document.getElementById('btn-switch-account').addEventListener('click', handleLogout);
+
+            // Search and filter listeners
+            document.getElementById('filter-search').addEventListener('input', renderTable);
+            document.getElementById('filter-unit-select').addEventListener('change', renderTable);
+            document.getElementById('filter-burden-select').addEventListener('change', renderTable);
+
+            // Listen to auth state
+            onAuthStateChanged(auth, async (user) => {
+                currentUser = user;
+                const authScreen = document.getElementById('auth-screen');
+                const unauthScreen = document.getElementById('unauthorized-screen');
+
+                if (!user) {
+                    authScreen.classList.remove('hidden');
+                    unauthScreen.classList.add('hidden');
+                    return;
+                }
+
+                // Verify user email against authorized admin email
+                const userEmail = (user.email || '').toLowerCase().trim();
+                if (userEmail !== AUTHORIZED_ADMIN_EMAIL) {
+                    authScreen.classList.add('hidden');
+                    unauthScreen.classList.remove('hidden');
+                    unauthScreen.classList.add('flex');
+                    document.getElementById('current-denied-email').textContent = user.email || 'Tanpa Emel';
+                    return;
+                }
+
+                // If authorized
+                authScreen.classList.add('hidden');
+                unauthScreen.classList.add('hidden');
+                showToast(`Selamat kembali, Dr. Ahmad Muzammil!`);
+                startFirestoreListener();
+            });
+
+        } catch (err) {
+            console.error(err);
+            showToast("Gagal memulakan Firebase: " + err.message, "error");
+        }
+    }
+
+    async function handleLogin(e) {
+        e.preventDefault();
+        const email = document.getElementById('login-email').value.trim();
+        const password = document.getElementById('login-password').value;
+        const btn = document.getElementById('btn-submit-login');
+
+        if (!email || !password) {
+            showToast("Sila lengkapkan emel dan kata laluan.", "warning");
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Mengesahkan...`;
+
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+        } catch (err) {
+            showToast("Log masuk gagal: Kata laluan atau emel tidak sah.", "error");
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fas fa-sign-in-alt"></i> Log Masuk Pentadbir`;
+        }
+    }
+
+    window.handleLogout = async function() {
+        const ok = await askConfirmation("Log Keluar", "Adakah anda pasti mahu log keluar daripada portal editor?");
+        if (ok) {
+            await signOut(auth);
+            originalDataMap.clear();
+            workingDataMap.clear();
+            dirtyRecordIds.clear();
+            deletedRecordIds.clear();
+            renderTable();
+        }
+    };
+
+    function startFirestoreListener() {
+        const loadingEl = document.getElementById('table-loading');
+        loadingEl.classList.remove('hidden');
+
+        const colRef = collection(db, "portfolios");
+        onSnapshot(colRef, (snapshot) => {
+            loadingEl.classList.add('hidden');
+            
+            // Only update unmodified rows if admin has uncommitted local edits
+            snapshot.docChanges().forEach(change => {
+                const docId = change.doc.id;
+                const raw = change.doc.data();
+                const record = { id: docId, ...raw };
+
+                if (change.type === "removed") {
+                    originalDataMap.delete(docId);
+                    if (!dirtyRecordIds.has(docId)) {
+                        workingDataMap.delete(docId);
+                    }
+                } else {
+                    originalDataMap.set(docId, record);
+                    // Update working copy only if not dirty
+                    if (!dirtyRecordIds.has(docId) && !deletedRecordIds.has(docId)) {
+                        workingDataMap.set(docId, JSON.parse(JSON.stringify(record)));
+                    }
+                }
+            });
+
+            renderTable();
+            updateChangeStatus();
+        }, (error) => {
+            loadingEl.classList.add('hidden');
+            showToast("Ralat membaca data: " + error.message, "error");
+        });
+    }
+
+    function renderTable() {
+        const tbody = document.getElementById('excel-table-body');
+        const emptyEl = document.getElementById('table-empty');
+        const searchVal = document.getElementById('filter-search').value.toLowerCase().trim();
+        const unitVal = document.getElementById('filter-unit-select').value;
+        const burdenVal = document.getElementById('filter-burden-select').value;
+
+        tbody.innerHTML = '';
+
+        const allRows = Array.from(workingDataMap.values());
+        let totalHours = 0;
+
+        // Apply filters
+        const filtered = allRows.filter(row => {
+            if (unitVal && (row.unit || '') !== unitVal) return false;
+            if (burdenVal && (row.beban_tinggi || '') !== burdenVal) return false;
+            if (searchVal) {
+                const combined = `${row.nama || ''} ${row.nama_projek || ''} ${row.email || ''} ${row.unit || ''} ${row.cadangan_serah || ''}`.toLowerCase();
+                if (!combined.includes(searchVal)) return false;
+            }
+            return true;
+        });
+
+        // Update statistics
+        document.getElementById('stat-row-count').textContent = filtered.length;
+        filtered.forEach(r => {
+            if (!deletedRecordIds.has(r.id)) {
+                totalHours += parseFloat(r.jam_seminggu) || 0;
+            }
+        });
+        document.getElementById('stat-hours-count').textContent = totalHours.toFixed(1);
+
+        if (filtered.length === 0) {
+            emptyEl.classList.remove('hidden');
+            return;
+        }
+        emptyEl.classList.add('hidden');
+
+        // Render each row
+        filtered.forEach((row, idx) => {
+            const isNew = String(row.id).startsWith('new_');
+            const isDirty = dirtyRecordIds.has(row.id);
+            const isDeleted = deletedRecordIds.has(row.id);
+
+            const tr = document.createElement('tr');
+            tr.id = `row-${row.id}`;
+            tr.className = `data-row ${isDirty ? 'dirty-row' : ''} ${isNew ? 'new-row' : ''} ${isDeleted ? 'delete-staged' : ''} hover:bg-slate-50/70 dark:hover:bg-slate-700/40`;
+
+            tr.innerHTML = `
+                <!-- Index & status indicator -->
+                <td class="excel-cell text-center font-mono text-[10px] text-slate-400 select-none bg-slate-50/50 dark:bg-slate-800/50">
+                    <div class="flex items-center justify-center gap-1">
+                        ${isDirty ? '<span class="w-1.5 h-1.5 rounded-full bg-amber-500" title="Ada perubahan"></span>' : ''}
+                        ${isNew ? '<span class="w-1.5 h-1.5 rounded-full bg-green-500" title="Baris baru"></span>' : ''}
+                        <span>${idx + 1}</span>
+                    </div>
+                </td>
+
+                <!-- 1. Nama Staf -->
+                <td class="excel-cell font-medium">
+                    <input type="text" value="${escapeHtml(row.nama || '')}" 
+                        onchange="updateCell('${row.id}', 'nama', this.value)" 
+                        placeholder="Nama Staf">
+                </td>
+
+                <!-- 2. Unit (Select) -->
+                <td class="excel-cell">
+                    <select onchange="updateCell('${row.id}', 'unit', this.value)">
+                        <option value="">-- Pilih Unit --</option>
+                        ${UNITS.map(u => `<option value="${u}" ${row.unit === u ? 'selected' : ''}>${u}</option>`).join('')}
+                    </select>
+                </td>
+
+                <!-- 3. Nama Projek / Portfolio -->
+                <td class="excel-cell font-medium text-slate-900 dark:text-white">
+                    <input type="text" value="${escapeHtml(row.nama_projek || '')}" 
+                        onchange="updateCell('${row.id}', 'nama_projek', this.value)" 
+                        placeholder="Nama Projek / Aktiviti">
+                </td>
+
+                <!-- 4. Kekerapan (Select) -->
+                <td class="excel-cell text-center">
+                    <select onchange="updateCell('${row.id}', 'kekerapan', this.value)">
+                        <option value="">-</option>
+                        ${FREQUENCIES.map(f => `<option value="${f}" ${row.kekerapan === f ? 'selected' : ''}>${f}</option>`).join('')}
+                    </select>
+                </td>
+
+                <!-- 5. Jam / Minggu (Numeric) -->
+                <td class="excel-cell text-center">
+                    <input type="number" step="0.5" min="0" 
+                        class="text-center font-bold text-blue-600 dark:text-blue-400 font-mono-num"
+                        value="${row.jam_seminggu ?? 0}" 
+                        onchange="updateCell('${row.id}', 'jam_seminggu', parseFloat(this.value) || 0)">
+                </td>
+
+                <!-- 6. Beban Tinggi (Ya/Tidak) -->
+                <td class="excel-cell text-center">
+                    <select class="font-bold ${row.beban_tinggi === 'Ya' ? 'text-red-600 dark:text-red-400' : 'text-slate-600'}"
+                        onchange="updateCell('${row.id}', 'beban_tinggi', this.value); this.className = 'font-bold ' + (this.value === 'Ya' ? 'text-red-600 dark:text-red-400' : 'text-slate-600')">
+                        <option value="Tidak" ${row.beban_tinggi === 'Tidak' ? 'selected' : ''}>Tidak</option>
+                        <option value="Ya" ${row.beban_tinggi === 'Ya' ? 'selected' : ''}>Ya</option>
+                    </select>
+                </td>
+
+                <!-- 7. Jumlah Staf Terlibat -->
+                <td class="excel-cell text-center">
+                    <select onchange="updateCell('${row.id}', 'jumlah_staf', this.value)">
+                        <option value="">-</option>
+                        ${STAFF_COUNTS.map(sc => `<option value="${sc}" ${row.jumlah_staf === sc ? 'selected' : ''}>${sc}</option>`).join('')}
+                    </select>
+                </td>
+
+                <!-- 8. Penglibatan Agensi Lain -->
+                <td class="excel-cell text-center">
+                    <select onchange="updateCell('${row.id}', 'penglibatan_agensi', this.value)">
+                        <option value="Tidak" ${row.penglibatan_agensi === 'Tidak' ? 'selected' : ''}>Tidak</option>
+                        <option value="Ya" ${row.penglibatan_agensi === 'Ya' ? 'selected' : ''}>Ya</option>
+                    </select>
+                </td>
+
+                <!-- 9. Serah Kepada Unit Lain? -->
+                <td class="excel-cell text-center">
+                    <select onchange="updateCell('${row.id}', 'serah_unit', this.value)">
+                        <option value="Tidak" ${row.serah_unit === 'Tidak' ? 'selected' : ''}>Tidak</option>
+                        <option value="Ya" ${row.serah_unit === 'Ya' ? 'selected' : ''}>Ya</option>
+                    </select>
+                </td>
+
+                <!-- 10. Cadangan Serah Kepada -->
+                <td class="excel-cell">
+                    <input type="text" value="${escapeHtml(row.cadangan_serah || '')}" 
+                        onchange="updateCell('${row.id}', 'cadangan_serah', this.value)" 
+                        placeholder="Contoh: Pegawai Farmasi U48">
+                </td>
+
+                <!-- 11. Emel Pemilik Rekod -->
+                <td class="excel-cell text-slate-500 font-mono text-[11px]">
+                    <input type="email" value="${escapeHtml(row.email || '')}" 
+                        onchange="updateCell('${row.id}', 'email', this.value)" 
+                        placeholder="user@moh.gov.my">
+                </td>
+
+                <!-- 12. Tanggungjawab (Array Modal Trigger) -->
+                <td class="excel-cell cursor-pointer" onclick="openTagPicker('${row.id}', 'tanggungjawab')">
+                    <div class="flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-300">
+                        <span class="truncate max-w-[130px]">${Array.isArray(row.tanggungjawab) && row.tanggungjawab.length ? row.tanggungjawab.join(', ') : '<span class=\"text-slate-400 italic\">Tiada</span>'}</span>
+                        <i class="fas fa-pen-to-square text-slate-400 ml-1 text-xs"></i>
+                    </div>
+                </td>
+
+                <!-- 13. Bulan Sibuk (Array Modal Trigger) -->
+                <td class="excel-cell cursor-pointer" onclick="openTagPicker('${row.id}', 'bulan_sibuk')">
+                    <div class="flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-300">
+                        <span class="truncate max-w-[110px]">${Array.isArray(row.bulan_sibuk) && row.bulan_sibuk.length ? row.bulan_sibuk.join(', ') : '<span class=\"text-slate-400 italic\">Tiada</span>'}</span>
+                        <i class="fas fa-calendar text-slate-400 ml-1 text-xs"></i>
+                    </div>
+                </td>
+
+                <!-- 14. Action: Delete / Restore -->
+                <td class="excel-cell text-center whitespace-nowrap select-none">
+                    ${isDeleted ? `
+                        <button onclick="stageRestoreRow('${row.id}')" class="p-1 text-emerald-600 hover:text-emerald-800 text-xs font-bold" title="Pulihkan Baris">
+                            <i class="fas fa-rotate-left"></i>
+                        </button>
+                    ` : `
+                        <button onclick="stageDeleteRow('${row.id}')" class="p-1 text-slate-400 hover:text-red-600 text-xs" title="Padam Baris Ini">
+                            <i class="fas fa-trash-can"></i>
+                        </button>
+                    `}
+                </td>
+            `;
+
+            tbody.appendChild(tr);
+        });
+    }
+
+    window.updateCell = function(recordId, fieldName, newValue) {
+        const row = workingDataMap.get(recordId);
+        if (!row) return;
+
+        row[fieldName] = newValue;
+        dirtyRecordIds.add(recordId);
+
+        updateChangeStatus();
+
+        // Visually update the row without full re-render for performance
+        const tr = document.getElementById(`row-${recordId}`);
+        if (tr && !tr.classList.contains('dirty-row')) {
+            tr.classList.add('dirty-row');
+        }
+    };
+
+    window.addNewRow = function() {
+        newRowCounter++;
+        const tempId = `new_${Date.now()}_${newRowCounter}`;
+        
+        const newRecord = {
+            id: tempId,
+            nama: "",
+            unit: "Unit Survelan Klinikal",
+            nama_projek: "Aktiviti Baharu",
+            kekerapan: "Bulanan",
+            jam_seminggu: 2,
+            beban_tinggi: "Tidak",
+            jumlah_staf: "1 orang",
+            penglibatan_agensi: "Tidak",
+            serah_unit: "Tidak",
+            cadangan_serah: "",
+            email: currentUser?.email || AUTHORIZED_ADMIN_EMAIL,
+            tanggungjawab: ["Merancang"],
+            impak: ["Bahagian"],
+            bulan_sibuk: ["Januari"]
+        };
+
+        workingDataMap.set(tempId, newRecord);
+        dirtyRecordIds.add(tempId);
+
+        renderTable();
+        updateChangeStatus();
+        showToast("Baris baharu ditambah pada jadual.", "warning");
+
+        // Scroll to newly added row
+        setTimeout(() => {
+            const tr = document.getElementById(`row-${tempId}`);
+            if (tr) tr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+    };
+
+    window.stageDeleteRow = async function(recordId) {
+        const ok = await askConfirmation("Padam Baris", "Adakah anda pasti mahu memadam rekod portfolio ini?");
+        if (!ok) return;
+
+        if (recordId.startsWith('new_')) {
+            workingDataMap.delete(recordId);
+            dirtyRecordIds.delete(recordId);
+        } else {
+            deletedRecordIds.add(recordId);
+            dirtyRecordIds.add(recordId);
+        }
+
+        renderTable();
+        updateChangeStatus();
+    };
+
+    window.stageRestoreRow = function(recordId) {
+        deletedRecordIds.delete(recordId);
+        dirtyRecordIds.delete(recordId);
+        renderTable();
+        updateChangeStatus();
+    };
+
+    function updateChangeStatus() {
+        const dirtyBadge = document.getElementById('dirty-status-badge');
+        const dirtyText = document.getElementById('dirty-count-text');
+        const saveBtn = document.getElementById('btn-save-all');
+        const revertBtn = document.getElementById('btn-revert');
+
+        const totalChanges = dirtyRecordIds.size + deletedRecordIds.size;
+
+        if (totalChanges > 0) {
+            dirtyBadge.classList.remove('hidden');
+            dirtyBadge.classList.add('inline-flex');
+            dirtyText.textContent = `${totalChanges} perubahan sedia disimpan`;
+            saveBtn.disabled = false;
+            revertBtn.disabled = false;
+        } else {
+            dirtyBadge.classList.add('hidden');
+            dirtyBadge.classList.remove('inline-flex');
+            saveBtn.disabled = true;
+            revertBtn.disabled = true;
+        }
+    }
+
+    window.saveAllChanges = async function() {
+        if (!currentUser || currentUser.email.toLowerCase() !== AUTHORIZED_ADMIN_EMAIL) {
+            showToast("Akses tidak dibenarkan untuk menyimpan.", "error");
+            return;
+        }
+
+        const totalChanges = dirtyRecordIds.size + deletedRecordIds.size;
+        if (totalChanges === 0) return;
+
+        const saveBtn = document.getElementById('btn-save-all');
+        const originalText = saveBtn.innerHTML;
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Menyimpan ke Firestore...`;
+
+        try {
+            const batch = writeBatch(db);
+
+            // 1. Process deletions
+            for (const docId of deletedRecordIds) {
+                if (!docId.startsWith('new_')) {
+                    const docRef = doc(db, "portfolios", docId);
+                    batch.delete(docRef);
+                }
+            }
+
+            // 2. Process updates & new insertions
+            for (const docId of dirtyRecordIds) {
+                if (deletedRecordIds.has(docId)) continue; // skip if marked for delete
+
+                const row = workingDataMap.get(docId);
+                if (!row) continue;
+
+                const payload = {
+                    nama: row.nama || "",
+                    unit: row.unit || "",
+                    nama_projek: row.nama_projek || "",
+                    kekerapan: row.kekerapan || "Bulanan",
+                    jam_seminggu: parseFloat(row.jam_seminggu) || 0,
+                    beban_tinggi: row.beban_tinggi || "Tidak",
+                    jumlah_staf: row.jumlah_staf || "1 orang",
+                    penglibatan_agensi: row.penglibatan_agensi || "Tidak",
+                    serah_unit: row.serah_unit || "Tidak",
+                    cadangan_serah: row.cadangan_serah || "",
+                    email: row.email || currentUser.email,
+                    tanggungjawab: Array.isArray(row.tanggungjawab) ? row.tanggungjawab : [],
+                    impak: Array.isArray(row.impak) ? row.impak : [],
+                    bulan_sibuk: Array.isArray(row.bulan_sibuk) ? row.bulan_sibuk : [],
+                    timestamp: serverTimestamp(),
+                    last_edited_by: currentUser.email
+                };
+
+                if (docId.startsWith('new_')) {
+                    const newDocRef = doc(collection(db, "portfolios"));
+                    batch.set(newDocRef, { ...payload, uid: currentUser.uid });
+                } else {
+                    const docRef = doc(db, "portfolios", docId);
+                    batch.update(docRef, payload);
+                }
+            }
+
+            await batch.commit();
+
+            dirtyRecordIds.clear();
+            deletedRecordIds.clear();
+            showToast("Semua data berjaya disimpan ke Firestore!");
+            updateChangeStatus();
+
+        } catch (err) {
+            console.error("Batch save failed:", err);
+            showToast("Ralat menyimpan: " + err.message, "error");
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = originalText;
+            updateChangeStatus();
+        }
+    };
+
+    window.revertChanges = async function() {
+        const ok = await askConfirmation("Batalkan Perubahan", "Adakah anda mahu membatalkan semua suntingan yang belum disimpan?");
+        if (!ok) return;
+
+        workingDataMap.clear();
+        dirtyRecordIds.clear();
+        deletedRecordIds.clear();
+
+        originalDataMap.forEach((val, key) => {
+            workingDataMap.set(key, JSON.parse(JSON.stringify(val)));
+        });
+
+        renderTable();
+        updateChangeStatus();
+        showToast("Perubahan telah dibatalkan semula.");
+    };
+
+    let activePickerRecordId = null;
+    let activePickerField = null;
+
+    window.openTagPicker = function(recordId, field) {
+        activePickerRecordId = recordId;
+        activePickerField = field;
+        const row = workingDataMap.get(recordId);
+        if (!row) return;
+
+        const modal = document.getElementById('tag-picker-modal');
+        const titleEl = document.getElementById('tag-modal-title');
+        const container = document.getElementById('tag-checkbox-container');
+
+        const currentSelection = Array.isArray(row[field]) ? row[field] : [];
+        const options = field === 'tanggungjawab' ? TJ_OPTIONS : MONTHS;
+
+        titleEl.textContent = field === 'tanggungjawab' ? "Pilih Tanggungjawab" : "Pilih Bulan Paling Sibuk";
+        container.innerHTML = options.map(opt => `
+            <label class="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer">
+                <input type="checkbox" value="${opt}" class="picker-cb rounded border-slate-300 text-emerald-600" ${currentSelection.includes(opt) ? 'checked' : ''}>
+                <span class="text-xs text-slate-700 dark:text-slate-200">${opt}</span>
+            </label>
+        `).join('');
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+
+        document.getElementById('tag-picker-confirm-btn').onclick = () => {
+            const selected = Array.from(container.querySelectorAll('.picker-cb:checked')).map(cb => cb.value);
+            updateCell(activePickerRecordId, activePickerField, selected);
+            closeTagPicker();
+            renderTable();
+        };
+    };
+
+    window.closeTagPicker = function() {
+        const modal = document.getElementById('tag-picker-modal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    };
+
+    window.exportToCsv = function() {
+        const rows = Array.from(workingDataMap.values()).filter(r => !deletedRecordIds.has(r.id));
+        if (!rows.length) {
+            showToast("Tiada data untuk dieksport.", "warning");
+            return;
+        }
+
+        const esc = s => `"${String(s ?? '').replace(/"/g, '""')}"`;
+        const headers = ["ID","Nama Staf","Unit","Nama Portfolio","Kekerapan","Jam Seminggu","Beban Tinggi","Jumlah Staf","Agensi Lain","Serah Unit","Cadangan Serah","Emel","Tanggungjawab","Bulan Sibuk"];
+        
+        let csv = headers.join(',') + '\n';
+        rows.forEach(r => {
+            csv += [
+                esc(r.id),
+                esc(r.nama),
+                esc(r.unit),
+                esc(r.nama_projek),
+                esc(r.kekerapan),
+                esc(r.jam_seminggu),
+                esc(r.beban_tinggi),
+                esc(r.jumlah_staf),
+                esc(r.penglibatan_agensi),
+                esc(r.serah_unit),
+                esc(r.cadangan_serah),
+                esc(r.email),
+                esc(Array.isArray(r.tanggungjawab) ? r.tanggungjawab.join('; ') : ''),
+                esc(Array.isArray(r.bulan_sibuk) ? r.bulan_sibuk.join('; ') : '')
+            ].join(',') + '\n';
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Beban_Kerja_Master_Excel_${new Date().toISOString().slice(0,10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        showToast("Fail CSV berjaya dimuat turun!");
+    };
+
+    function escapeHtml(str) {
+        return String(str || '')
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
+    window.toggleDarkMode = function() {
+        const body = document.body;
+        const icon = document.querySelector('#theme-toggle-btn i');
+        body.classList.toggle('dark-mode');
+
+        if (body.classList.contains('dark-mode')) {
+            icon.classList.replace('fa-moon', 'fa-sun');
+            icon.classList.replace('text-yellow-500', 'text-yellow-300');
+        } else {
+            icon.classList.replace('fa-sun', 'fa-moon');
+            icon.classList.replace('text-yellow-300', 'text-yellow-500');
+        }
+    };
+
+    document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
