@@ -211,35 +211,24 @@
                     <div class="relative">
                         <i class="fas fa-envelope absolute left-3.5 top-3 text-slate-400 text-sm"></i>
                         <input type="email" id="login-email" required placeholder="drahmadmuzammil@moh.gov.my"
-                            value="drahmadmuzammil@moh.gov.my"
-                            class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-sm font-medium outline-none focus:ring-2 focus:ring-emerald-500 transition text-slate-800 dark:text-white">
+                            value="drahmadmuzammil@moh.gov.my" readonly
+                            class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-100 dark:bg-slate-900/60 text-sm font-medium outline-none text-slate-700 dark:text-slate-300 cursor-not-allowed">
                     </div>
                 </div>
                 <div>
-                    <div class="flex items-center justify-between mb-1.5">
-                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Kata Laluan</label>
-                        <button type="button" onclick="handleResetPassword()" class="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">
-                            Lupa Kata Laluan?
-                        </button>
-                    </div>
+                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5">Kata Laluan Pentadbir</label>
                     <div class="relative">
                         <i class="fas fa-key absolute left-3.5 top-3 text-slate-400 text-sm"></i>
-                        <input type="password" id="login-password" required placeholder="••••••••"
+                        <input type="password" id="login-password" required placeholder="••••••••" autofocus
                             class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-sm font-medium outline-none focus:ring-2 focus:ring-emerald-500 transition text-slate-800 dark:text-white">
                     </div>
-                    <p class="text-[11px] text-slate-400 mt-1">Kata laluan akaun Firebase anda (bukan passkey papan pemuka).</p>
+                    <p class="text-[11px] text-slate-400 mt-1">Kata laluan akaun pentadbir MOH anda.</p>
                 </div>
                 
                 <button type="submit" id="btn-submit-login"
                     class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm transition shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2">
                     <i class="fas fa-sign-in-alt"></i> Log Masuk Pentadbir
                 </button>
-
-                <div class="pt-2 text-center">
-                    <button type="button" id="btn-toggle-register" onclick="toggleRegisterMode()" class="text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition">
-                        Belum daftar akaun pentadbir ini? <span class="text-emerald-600 dark:text-emerald-400 underline">Daftar Di Sini</span>
-                    </button>
-                </div>
             </form>
         </div>
     </div>
@@ -515,13 +504,13 @@
                         </table>
                     </div>
 
-                    <!-- Merge option toggle -->
-                    <div class="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl flex items-start gap-2.5 text-amber-800 dark:text-amber-300 text-xs">
-                        <i class="fas fa-lightbulb mt-0.5 text-amber-600"></i>
+                    <!-- Auto-ID Notification banner -->
+                    <div class="p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-start gap-2.5 text-emerald-800 dark:text-emerald-300 text-xs">
+                        <i class="fas fa-wand-magic-sparkles mt-0.5 text-emerald-600"></i>
                         <div class="flex-1">
-                            <p class="font-bold">Mod Kemas Kini:</p>
-                            <p class="text-[11px] text-amber-700 dark:text-amber-400 mt-0.5">
-                                Jika kolum <code class="font-mono font-bold bg-amber-100 dark:bg-amber-900/50 px-1 rounded">ID</code> mengandungi ID dokumen Firestore yang sah, rekod tersebut akan dikemaskini. Jika kolum ID kosong atau baharu, baris baharu akan ditambah ke jadual.
+                            <p class="font-bold">Penetapan ID Automatik:</p>
+                            <p class="text-[11px] text-emerald-700 dark:text-emerald-400 mt-0.5">
+                                Anda tidak perlu mengisi kolum ID dalam Excel. Semua baris akan diberikan ID unik secara automatik dan dijana terus semasa disimpan ke pangkalan data.
                             </p>
                         </div>
                     </div>
@@ -581,7 +570,6 @@
     // Application state
     let app, auth, db;
     let currentUser = null;
-    let isRegisterMode = false;
     let originalDataMap = new Map(); // id -> pristine firestore record
     let workingDataMap = new Map();  // id -> edited local state
     let dirtyRecordIds = new Set();  // set of modified record ids
@@ -718,104 +706,29 @@
         const btn = document.getElementById('btn-submit-login');
 
         if (!email || !password) {
-            showToast("Sila lengkapkan emel dan kata laluan.", "warning");
-            return;
-        }
-
-        if (email.toLowerCase() !== AUTHORIZED_ADMIN_EMAIL) {
-            showToast("Hanya emel pentadbir sah dibenarkan: drahmadmuzammil@moh.gov.my", "error");
+            showToast("Sila masukkan kata laluan.", "warning");
             return;
         }
 
         btn.disabled = true;
-
-        if (isRegisterMode) {
-            if (password.length < 6) {
-                showToast("Kata laluan mestilah sekurang-kurangnya 6 aksara.", "warning");
-                btn.disabled = false;
-                return;
-            }
-            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Mendaftar akaun pentadbir...`;
-            try {
-                await createUserWithEmailAndPassword(auth, email, password);
-                showToast("Akaun pentadbir berjaya didaftarkan!", "success");
-            } catch (err) {
-                console.error("Registration error:", err);
-                if (err.code === 'auth/email-already-in-use') {
-                    showToast("Akaun emel ini sudah berdaftar. Sila guna mod 'Log Masuk Pentadbir'.", "warning");
-                    toggleRegisterMode(false);
-                } else {
-                    showToast("Ralat pendaftaran: " + err.message, "error");
-                }
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = `<i class="fas fa-user-plus"></i> Daftar Akaun Pentadbir`;
-            }
-        } else {
-            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Mengesahkan...`;
-            try {
-                await signInWithEmailAndPassword(auth, email, password);
-            } catch (err) {
-                console.error("Login error:", err);
-                if (err.code === 'auth/user-not-found') {
-                    showToast("Emel ini belum didaftarkan di Firebase. Sila klik 'Daftar Di Sini' di bawah.", "error");
-                } else if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
-                    showToast("Kata laluan tidak sah. Jika terlupa, klik 'Lupa Kata Laluan?'.", "error");
-                } else if (err.code === 'auth/too-many-requests') {
-                    showToast("Terlalu banyak percubaan gagal. Sila cuba sebentar lagi atau reset kata laluan.", "warning");
-                } else {
-                    showToast("Log masuk gagal: " + (err.message || "Ralat tidak diketahui"), "error");
-                }
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = `<i class="fas fa-sign-in-alt"></i> Log Masuk Pentadbir`;
-            }
-        }
-    }
-
-    window.toggleRegisterMode = function(forceMode = null) {
-        isRegisterMode = forceMode !== null ? forceMode : !isRegisterMode;
-        const btn = document.getElementById('btn-submit-login');
-        const toggleBtn = document.getElementById('btn-toggle-register');
-        const headerTitle = document.getElementById('auth-header-title');
-
-        if (isRegisterMode) {
-            headerTitle.textContent = "Daftar Akaun Pentadbir";
-            btn.innerHTML = `<i class="fas fa-user-plus"></i> Daftar Akaun Pentadbir`;
-            btn.classList.replace('bg-emerald-600', 'bg-blue-600');
-            btn.classList.replace('hover:bg-emerald-700', 'hover:bg-blue-700');
-            toggleBtn.innerHTML = `Sudah ada kata laluan? <span class="text-blue-600 dark:text-blue-400 underline">Log Masuk Di Sini</span>`;
-        } else {
-            headerTitle.textContent = "Portal Editor Excel";
-            btn.innerHTML = `<i class="fas fa-sign-in-alt"></i> Log Masuk Pentadbir`;
-            btn.classList.replace('bg-blue-600', 'bg-emerald-600');
-            btn.classList.replace('hover:bg-blue-700', 'hover:bg-emerald-700');
-            toggleBtn.innerHTML = `Belum daftar akaun pentadbir ini? <span class="text-emerald-600 dark:text-emerald-400 underline">Daftar Di Sini</span>`;
-        }
-    };
-
-    window.handleResetPassword = async function() {
-        const email = document.getElementById('login-email').value.trim();
-        if (!email) {
-            showToast("Sila masukkan alamat emel untuk menerima pautan reset.", "warning");
-            return;
-        }
-
-        const ok = await askConfirmation(
-            "Reset Kata Laluan", 
-            `Hantar pautan reset kata laluan ke peti masuk ${email}?`, 
-            "Hantar Emel"
-        );
-        if (!ok) return;
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Mengesahkan...`;
 
         try {
-            await sendPasswordResetEmail(auth, email);
-            showToast(`Pautan penetapan semula kata laluan telah dihantar ke ${email}. Sila semak emel anda.`, "success");
+            await signInWithEmailAndPassword(auth, email, password);
         } catch (err) {
-            console.error("Password reset error:", err);
-            showToast("Gagal menghantar emel: " + err.message, "error");
+            console.error("Login error:", err);
+            if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+                showToast("Kata laluan tidak sah. Sila cuba lagi.", "error");
+            } else if (err.code === 'auth/too-many-requests') {
+                showToast("Terlalu banyak percubaan gagal. Sila cuba sebentar lagi.", "warning");
+            } else {
+                showToast("Log masuk gagal: " + (err.message || "Ralat tidak diketahui"), "error");
+            }
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fas fa-sign-in-alt"></i> Log Masuk Pentadbir`;
         }
-    };
+    }
 
     window.handleLogout = async function() {
         const ok = await askConfirmation("Log Keluar", "Adakah anda pasti mahu log keluar daripada portal editor?");
@@ -1348,7 +1261,7 @@
                 .filter(s => s.length > 0);
         };
 
-        const idVal = getVal('id', 'id dokumen', 'doc_id', 'doc id');
+        // No ID column required from users — automatically assigned
         const namaVal = getVal('nama staf', 'nama', 'staf', 'nama pekerja');
         const unitVal = getVal('unit', 'nama unit', 'bahagian');
         const projekVal = getVal('nama projek / portfolio', 'nama projek', 'projek', 'nama portfolio', 'portfolio');
@@ -1373,7 +1286,6 @@
         const bulanArr = splitMulti(getVal('bulan sibuk', 'bulan paling sibuk', 'busy months'));
 
         return {
-            id: idVal,
             nama: namaVal,
             unit: unitVal || 'Unit Survelan Klinikal',
             nama_projek: projekVal || 'Aktiviti Excel',
@@ -1426,51 +1338,38 @@
         document.getElementById('btn-apply-bulk-excel').disabled = false;
     }
 
-    // Apply parsed rows to working dataset
+    // Apply parsed rows to working dataset (All auto-assigned with unique IDs)
     window.applyBulkExcelData = function() {
         if (!stagedParsedExcelRows.length) return;
 
-        let updatedCount = 0;
         let addedCount = 0;
 
         stagedParsedExcelRows.forEach(row => {
-            let targetId = row.id;
-
-            // If an ID was supplied and exists in our current map, update it
-            if (targetId && workingDataMap.has(targetId)) {
-                const existing = workingDataMap.get(targetId);
-                Object.assign(existing, row);
-                dirtyRecordIds.add(targetId);
-                updatedCount++;
-            } else {
-                // Otherwise treat as a new insertion
-                newRowCounter++;
-                const newTempId = `new_excel_${Date.now()}_${newRowCounter}`;
-                row.id = newTempId;
-                workingDataMap.set(newTempId, row);
-                dirtyRecordIds.add(newTempId);
-                addedCount++;
-            }
+            newRowCounter++;
+            const newTempId = `new_excel_${Date.now()}_${newRowCounter}`;
+            row.id = newTempId;
+            workingDataMap.set(newTempId, row);
+            dirtyRecordIds.add(newTempId);
+            addedCount++;
         });
 
         closeBulkUploadModal();
         renderTable();
         updateChangeStatus();
 
-        showToast(`Berjaya memuatkan Excel: ${addedCount} baris baru ditambah, ${updatedCount} baris dikemaskini. Sila klik "Simpan Semua Perubahan".`, "warning");
+        showToast(`Berjaya memuatkan ${addedCount} baris rekod baru dari fail Excel. Sila klik "Simpan Semua Perubahan".`, "warning");
     };
 
-    // Download formatted blank Excel Template (.xlsx) with column guides and examples
+    // Download formatted blank Excel Template (.xlsx) without any manual ID column
     window.downloadExcelTemplate = function() {
         if (!window.XLSX) {
             showToast("Perpustakaan Excel belum sedia.", "error");
             return;
         }
 
-        // Example rows with realistic data and comma-separated multiple choice
+        // Example rows with clean headers — no ID column
         const sampleData = [
             {
-                "ID": "", // Leave blank for new rows, or fill with Firestore Doc ID to update existing
                 "Nama Staf": "Dr. Ahmad Muzammil",
                 "Unit": "Unit Survelan Klinikal",
                 "Nama Projek / Portfolio": "Survelan Denggi Kebangsaan",
@@ -1486,7 +1385,6 @@
                 "Bulan Sibuk": "Januari, Jun, Julai, Disember"
             },
             {
-                "ID": "",
                 "Nama Staf": "Pn. Siti Aminah",
                 "Unit": "Unit Kawalan Infeksi",
                 "Nama Projek / Portfolio": "Audit Hand Hygiene Wad",
@@ -1511,11 +1409,9 @@
 
         const wb = XLSX.utils.book_new();
 
-        // Sheet 1: Template
+        // Sheet 1: Template (Column widths adjusted without ID)
         const wsTemplate = XLSX.utils.json_to_sheet(sampleData);
-        // Column widths
         wsTemplate['!cols'] = [
-            { wch: 22 }, // ID
             { wch: 22 }, // Nama Staf
             { wch: 30 }, // Unit
             { wch: 32 }, // Nama Projek
@@ -1546,7 +1442,7 @@
         XLSX.utils.book_append_sheet(wb, wsRef, "Panduan Pilihan Sah");
 
         XLSX.writeFile(wb, "Templat_Beban_Kerja_MOH.xlsx");
-        showToast("Templat Excel berjaya dimuat turun dengan panduan lajur!");
+        showToast("Templat Excel berjaya dimuat turun!");
     };
 
     // Native .xlsx export
