@@ -44,6 +44,7 @@
             font-size: 0.8125rem;
             line-height: 1.35;
             color: #0f172a;
+            background-color: #ffffff;
             transition: background-color 0.15s, box-shadow 0.15s;
         }
 
@@ -62,7 +63,7 @@
             outline: none;
             font-size: 0.8125rem;
             padding: 2px 4px;
-            color: #0f172a;
+            color: #0f172a !important;
             font-weight: 500;
         }
 
@@ -105,7 +106,8 @@
         html.dark .excel-cell, body.dark-mode .excel-cell {
             border-right: 1px solid #1f2937;
             border-bottom: 1px solid #1f2937;
-            color: #f1f5f9;
+            background-color: #111827 !important;
+            color: #f1f5f9 !important;
         }
 
         html.dark .excel-cell:focus-within, body.dark-mode .excel-cell:focus-within {
@@ -115,7 +117,7 @@
 
         html.dark .excel-cell input, html.dark .excel-cell select,
         body.dark-mode .excel-cell input, body.dark-mode .excel-cell select {
-            color: #f8fafc;
+            color: #f8fafc !important;
         }
 
         html.dark .excel-cell select option, body.dark-mode .excel-cell select option {
@@ -176,6 +178,19 @@
                         <h3 id="modal-title" class="text-lg font-bold text-slate-900 dark:text-white">Pengesahan Diperlukan</h3>
                         <p id="modal-message" class="text-sm text-slate-500 dark:text-slate-400 mt-1">Adakah anda pasti mahu melakukan tindakan ini?</p>
                     </div>
+                </div>
+            </div>
+            <div class="bg-slate-50 dark:bg-slate-700/50 px-6 py-3.5 flex justify-end gap-3 border-t border-slate-100 dark:border-slate-700">
+                <button id="modal-btn-cancel" class="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition">
+                    Batal
+                </button>
+                <button id="modal-btn-confirm" class="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-red-600 hover:bg-red-700 shadow-sm transition">
+                    Teruskan
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Screen 1: Login & Registration Box -->
     <div id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-md p-4">
         <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700 w-full max-w-md overflow-hidden">
@@ -212,6 +227,7 @@
                         <input type="password" id="login-password" required placeholder="••••••••"
                             class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-sm font-medium outline-none focus:ring-2 focus:ring-emerald-500 transition text-slate-800 dark:text-white">
                     </div>
+                    <p class="text-[11px] text-slate-400 mt-1">Kata laluan akaun Firebase anda (bukan passkey papan pemuka).</p>
                 </div>
                 
                 <button type="submit" id="btn-submit-login"
@@ -662,8 +678,10 @@
                 currentUser = user;
                 const authScreen = document.getElementById('auth-screen');
                 const unauthScreen = document.getElementById('unauthorized-screen');
+                const loadingEl = document.getElementById('table-loading');
 
                 if (!user) {
+                    if (loadingEl) loadingEl.classList.add('hidden');
                     authScreen.classList.remove('hidden');
                     unauthScreen.classList.add('hidden');
                     return;
@@ -672,6 +690,7 @@
                 // Verify user email against authorized admin email
                 const userEmail = (user.email || '').toLowerCase().trim();
                 if (userEmail !== AUTHORIZED_ADMIN_EMAIL) {
+                    if (loadingEl) loadingEl.classList.add('hidden');
                     authScreen.classList.add('hidden');
                     unauthScreen.classList.remove('hidden');
                     unauthScreen.classList.add('flex');
