@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Analisis Beban Kerja</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <style>
@@ -22,8 +27,8 @@
         body.dark-mode .bg-white { background-color: #1e293b !important; border-color: #334155 !important; }
         body.dark-mode nav.bg-white { border-bottom-color: #334155 !important; }
         body.dark-mode .bg-slate-50, body.dark-mode .bg-blue-50, body.dark-mode .bg-emerald-50, body.dark-mode .bg-gray-100 { background-color: #0f172a !important; border-color: #334155 !important; color: #e2e8f0 !important; }
-        body.dark-mode .bg-red-50 { background-color: #2d1b1b !important; border-color: #7f1d1d !important; }
-        body.dark-mode .bg-amber-50 { background-color: #2d2000 !important; border-color: #78350f !important; }
+        body.dark-mode .bg-red-50 { background-color: #2d1616 !important; border-color: #7f1d1d !important; }
+        body.dark-mode .bg-amber-50 { background-color: #2e2008 !important; border-color: #78350f !important; }
         body.dark-mode .text-slate-800, body.dark-mode .text-slate-700, body.dark-mode .text-gray-700, body.dark-mode .text-blue-800, body.dark-mode .text-emerald-800 { color: #f8fafc !important; }
         body.dark-mode .text-slate-600, body.dark-mode .text-gray-500, body.dark-mode .text-slate-500, body.dark-mode .text-slate-400 { color: #94a3b8 !important; }
         body.dark-mode input, body.dark-mode select { background-color: #0f172a !important; color: #f8fafc !important; border-color: #475569 !important; }
@@ -34,7 +39,15 @@
         body.dark-mode #user-nav .bg-slate-100 { background-color: #334155 !important; border-color: #475569 !important; }
         body.dark-mode #user-nav button.text-slate-700 { color: #f1f5f9 !important; border-color: #475569 !important; }
 
-        #passkey-modal { backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+        /* Dark mode enhancements for sub-tables & pagination bars */
+        body.dark-mode .sub-table-header-red { background-color: #2a1515 !important; border-color: #571616 !important; }
+        body.dark-mode .sub-table-header-amber { background-color: #2b1f09 !important; border-color: #5c3809 !important; }
+        body.dark-mode .sub-table-footer { background-color: #162032 !important; border-color: #334155 !important; }
+        body.dark-mode .page-btn { background-color: #1e293b !important; border-color: #475569 !important; color: #e2e8f0 !important; }
+        body.dark-mode .page-btn:hover:not(:disabled) { background-color: #334155 !important; }
+        body.dark-mode .sort-th:hover { background-color: #334155 !important; }
+
+        #passkey-modal, #confirm-modal { backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
 
         .dash-card { transition: box-shadow 0.2s ease; }
         .dash-card:hover { box-shadow: 0 12px 30px -6px rgba(0,0,0,0.1); }
@@ -48,6 +61,12 @@
         .badge-amber { background: #fef9c3; color: #a16207; }
         .badge-slate { background: #f1f5f9; color: #475569; }
 
+        body.dark-mode .badge-red   { background: #451a1a !important; color: #fca5a5 !important; }
+        body.dark-mode .badge-green { background: #143823 !important; color: #86efac !important; }
+        body.dark-mode .badge-blue  { background: #1e2e4a !important; color: #93c5fd !important; }
+        body.dark-mode .badge-amber { background: #3d2c0b !important; color: #fde047 !important; }
+        body.dark-mode .badge-slate { background: #334155 !important; color: #cbd5e1 !important; }
+
         .pbar-track { height: 5px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; margin-top: 10px; }
         .pbar-fill   { height: 100%; border-radius: 9999px; transition: width 0.8s cubic-bezier(.4,0,.2,1); }
 
@@ -56,6 +75,7 @@
 </head>
 <body class="text-slate-800 pb-20">
 
+<!-- Passkey Security Modal -->
 <div id="passkey-modal" class="fixed inset-0 bg-slate-900/60 z-50 hidden items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden" onclick="event.stopPropagation()">
         <div class="bg-gradient-to-br from-slate-700 to-slate-900 px-8 py-8 text-center">
@@ -84,6 +104,21 @@
                 class="w-full text-slate-400 hover:text-slate-600 text-sm font-medium py-1.5 transition-colors">
                 Batal
             </button>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Confirmation Dialog (No window.confirm) -->
+<div id="confirm-modal" class="fixed inset-0 bg-slate-900/60 z-50 hidden items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-6 text-center">
+        <div class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-3 text-xl">
+            <i class="fas fa-trash-alt"></i>
+        </div>
+        <h4 id="confirm-title" class="text-base font-bold text-slate-800 dark:text-white">Padam Rekod</h4>
+        <p id="confirm-msg" class="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-5">Adakah anda pasti? Tindakan ini tidak boleh diundur.</p>
+        <div class="flex gap-2">
+            <button id="confirm-btn-cancel" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold">Batal</button>
+            <button id="confirm-btn-ok" class="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold">Ya, Padam</button>
         </div>
     </div>
 </div>
@@ -284,6 +319,7 @@
                 </div>
             </div>
 
+            <!-- KPI Cards -->
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
                 <div class="bg-white rounded-xl border border-slate-100 p-6 dash-card relative overflow-hidden">
                     <div class="absolute inset-0 bg-blue-500/4 pointer-events-none rounded-xl"></div>
@@ -328,6 +364,7 @@
                 </div>
             </div>
 
+            <!-- Charts Top Row -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
                 <div class="lg:col-span-2 bg-white rounded-xl border border-slate-100 p-5 dash-card">
                     <div class="flex items-center justify-between mb-4">
@@ -359,6 +396,7 @@
                 </div>
             </div>
 
+            <!-- Charts Middle Row -->
             <div class="grid grid-cols-1 lg:grid-cols-5 gap-5">
                 <div class="lg:col-span-3 bg-white rounded-xl border border-slate-100 p-5 dash-card">
                     <div class="flex items-center justify-between mb-4">
@@ -389,6 +427,7 @@
                 </div>
             </div>
 
+            <!-- Top 5 Staff Chart -->
             <div class="bg-white rounded-xl border border-slate-100 p-5 dash-card">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-sm font-bold text-slate-700 flex items-center gap-2">
@@ -404,81 +443,165 @@
                 </div>
             </div>
 
+            <!-- UPGRADED TABLES: Portfolio Beban Tinggi & Cadangan Serah Tugas -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                <div class="bg-white rounded-xl border border-slate-100 overflow-hidden dash-card">
-                    <div class="flex items-center gap-3 px-5 py-4 border-b border-red-100 bg-red-50">
-                        <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <i class="fas fa-exclamation-triangle text-red-500 text-sm"></i>
+
+                <!-- 1. Portfolio Beban Tinggi Table (Searchable & Paginated) -->
+                <div class="bg-white rounded-xl border border-slate-100 overflow-hidden dash-card flex flex-col justify-between">
+                    <div>
+                        <div class="sub-table-header-red flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-3.5 border-b border-red-100 bg-red-50/80">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 bg-red-100 dark:bg-red-900/60 rounded-lg flex items-center justify-center flex-shrink-0 text-red-600 dark:text-red-300">
+                                    <i class="fas fa-exclamation-triangle text-sm"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-bold text-red-700 dark:text-red-400">Portfolio Beban Tinggi</h3>
+                                    <p class="text-xs text-red-400 dark:text-red-300/70" id="beban-tinggi-count">0 rekod</p>
+                                </div>
+                            </div>
+                            <div class="relative w-full sm:w-48">
+                                <i class="fas fa-search absolute left-2.5 top-2.5 text-red-300 dark:text-red-400/60 text-xs"></i>
+                                <input type="text" id="search-beban-tinggi" placeholder="Cari portfolio / staf..."
+                                    class="w-full pl-7 pr-2.5 py-1 text-xs rounded-lg border border-red-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-100 placeholder-slate-400 outline-none focus:ring-1 focus:ring-red-400">
+                            </div>
                         </div>
-                        <div>
-                            <h3 class="text-sm font-bold text-red-700">Portfolio Beban Tinggi</h3>
-                            <p class="text-xs text-red-400" id="beban-tinggi-count">0 rekod</p>
+                        <div class="overflow-x-auto min-h-[240px]">
+                            <table class="w-full text-left">
+                                <thead>
+                                    <tr class="bg-slate-50 dark:bg-slate-800/80 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide border-b border-slate-100 dark:border-slate-700">
+                                        <th class="px-4 py-2.5">Portfolio</th>
+                                        <th class="px-4 py-2.5">Staf (Unit)</th>
+                                        <th class="px-4 py-2.5 text-right">Jam/Mgu</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-beban-tinggi" class="divide-y divide-slate-100 dark:divide-slate-700/60 text-xs text-slate-700 dark:text-slate-200"></tbody>
+                            </table>
+                            <div id="beban-empty" class="hidden text-center py-10 text-slate-400 text-xs">
+                                <i class="fas fa-check-circle text-green-400 text-2xl mb-1 block"></i>Tiada portfolio beban tinggi ditemui
+                            </div>
                         </div>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left">
-                            <thead>
-                                <tr class="bg-slate-50 text-xs font-bold text-slate-500 uppercase tracking-wide">
-                                    <th class="px-4 py-3">Portfolio</th>
-                                    <th class="px-4 py-3">Staf (Unit)</th>
-                                    <th class="px-4 py-3 text-right">Jam</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tbody-beban-tinggi" class="divide-y divide-slate-100 text-sm"></tbody>
-                        </table>
-                        <div id="beban-empty" class="hidden text-center py-7 text-slate-400 text-sm">
-                            <i class="fas fa-check-circle text-green-400 text-2xl mb-1 block"></i>Tiada portfolio beban tinggi
+                    <!-- Beban Tinggi Pagination Bar -->
+                    <div class="sub-table-footer flex items-center justify-between px-4 py-2.5 border-t border-slate-100 bg-slate-50/50 text-xs">
+                        <span class="text-slate-400 font-medium" id="beban-page-info">—</span>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="changeBebanPage(-1)" id="beban-prev" class="page-btn px-2.5 py-1 rounded-md bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition font-medium" disabled>
+                                <i class="fas fa-chevron-left text-[10px]"></i>
+                            </button>
+                            <button onclick="changeBebanPage(1)" id="beban-next" class="page-btn px-2.5 py-1 rounded-md bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition font-medium" disabled>
+                                <i class="fas fa-chevron-right text-[10px]"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-white rounded-xl border border-slate-100 overflow-hidden dash-card">
-                    <div class="flex items-center gap-3 px-5 py-4 border-b border-amber-100 bg-amber-50">
-                        <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <i class="fas fa-right-left text-amber-500 text-sm"></i>
+                <!-- 2. Cadangan Serah Tugas Table (Grouped/Combined, Searchable & Paginated) -->
+                <div class="bg-white rounded-xl border border-slate-100 overflow-hidden dash-card flex flex-col justify-between">
+                    <div>
+                        <div class="sub-table-header-amber flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-3.5 border-b border-amber-100 bg-amber-50/80">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 bg-amber-100 dark:bg-amber-900/60 rounded-lg flex items-center justify-center flex-shrink-0 text-amber-600 dark:text-amber-400">
+                                    <i class="fas fa-right-left text-sm"></i>
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <h3 class="text-sm font-bold text-amber-700 dark:text-amber-400">Cadangan Serah Tugas</h3>
+                                        <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-200/80 dark:bg-amber-900/80 text-amber-800 dark:text-amber-200" title="Portfolio dengan nama sama digabungkan">Tergabung</span>
+                                    </div>
+                                    <p class="text-xs text-amber-500 dark:text-amber-400/80" id="serah-tugas-count">0 projek</p>
+                                </div>
+                            </div>
+                            <div class="relative w-full sm:w-48">
+                                <i class="fas fa-search absolute left-2.5 top-2.5 text-amber-400 text-xs"></i>
+                                <input type="text" id="search-serah-tugas" placeholder="Cari portfolio / cadangan..."
+                                    class="w-full pl-7 pr-2.5 py-1 text-xs rounded-lg border border-amber-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-100 placeholder-slate-400 outline-none focus:ring-1 focus:ring-amber-400">
+                            </div>
                         </div>
-                        <div>
-                            <h3 class="text-sm font-bold text-amber-700">Cadangan Serah Tugas</h3>
-                            <p class="text-xs text-amber-400" id="serah-tugas-count">0 rekod</p>
+                        <div class="overflow-x-auto min-h-[240px]">
+                            <table class="w-full text-left">
+                                <thead>
+                                    <tr class="bg-slate-50 dark:bg-slate-800/80 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide border-b border-slate-100 dark:border-slate-700">
+                                        <th class="px-4 py-2.5 min-w-[140px]">Portfolio / Projek</th>
+                                        <th class="px-4 py-2.5 min-w-[120px]">Unit Asal</th>
+                                        <th class="px-4 py-2.5 min-w-[150px]">Cadangan Serah Kepada</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-serah-tugas" class="divide-y divide-slate-100 dark:divide-slate-700/60 text-xs text-slate-700 dark:text-slate-200"></tbody>
+                            </table>
+                            <div id="serah-empty" class="hidden text-center py-10 text-slate-400 text-xs">
+                                <i class="fas fa-check-circle text-green-400 text-2xl mb-1 block"></i>Tiada cadangan penyerahan tugas ditemui
+                            </div>
                         </div>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left">
-                            <thead>
-                                <tr class="bg-slate-50 text-xs font-bold text-slate-500 uppercase tracking-wide">
-                                    <th class="px-4 py-3">Portfolio</th>
-                                    <th class="px-4 py-3">Unit Semasa</th>
-                                    <th class="px-4 py-3">Serah Kepada</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tbody-serah-tugas" class="divide-y divide-slate-100 text-sm"></tbody>
-                        </table>
-                        <div id="serah-empty" class="hidden text-center py-7 text-slate-400 text-sm">
-                            <i class="fas fa-check-circle text-green-400 text-2xl mb-1 block"></i>Tiada cadangan penyerahan
+                    <!-- Cadangan Serah Tugas Pagination Bar -->
+                    <div class="sub-table-footer flex items-center justify-between px-4 py-2.5 border-t border-slate-100 bg-slate-50/50 text-xs">
+                        <span class="text-slate-400 font-medium" id="serah-page-info">—</span>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="changeSerahPage(-1)" id="serah-prev" class="page-btn px-2.5 py-1 rounded-md bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition font-medium" disabled>
+                                <i class="fas fa-chevron-left text-[10px]"></i>
+                            </button>
+                            <button onclick="changeSerahPage(1)" id="serah-next" class="page-btn px-2.5 py-1 rounded-md bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition font-medium" disabled>
+                                <i class="fas fa-chevron-right text-[10px]"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
+
             </div>
 
+            <!-- Complete Dataset Table with Clickable Sortable Headers -->
             <div class="bg-white rounded-xl border border-slate-100 overflow-hidden dash-card">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 px-5 py-4 border-b border-slate-100">
-                    <h3 class="text-sm font-bold text-slate-700">
-                        <i class="fas fa-table text-slate-400 mr-2"></i>Senarai Lengkap Data
-                    </h3>
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-700 flex items-center gap-2">
+                            <i class="fas fa-table text-slate-400"></i>Senarai Lengkap Data
+                        </h3>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Klik pada tajuk lajur untuk menyusun secara menaik atau menurun.</p>
+                    </div>
                     <input type="text" id="table-search" placeholder="Cari nama staf, unit atau portfolio…"
                         class="w-full sm:w-64 rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-400 outline-none">
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left min-w-[720px]">
                         <thead>
-                            <tr class="bg-slate-50 text-xs font-bold text-slate-500 uppercase tracking-wide border-b border-slate-200">
-                                <th class="px-4 py-3 w-8">#</th>
-                                <th class="px-4 py-3">Nama Staf</th>
-                                <th class="px-4 py-3">Unit</th>
-                                <th class="px-4 py-3">Portfolio</th>
-                                <th class="px-4 py-3">Kekerapan</th>
-                                <th class="px-4 py-3 text-center">Jam/Minggu</th>
-                                <th class="px-4 py-3 text-center">Beban</th>
+                            <tr class="bg-slate-50 text-xs font-bold text-slate-500 uppercase tracking-wide border-b border-slate-200 select-none">
+                                <th class="px-4 py-3 w-10 text-slate-400 font-normal">#</th>
+                                <th onclick="sortTable('nama')" class="sort-th px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                                    <div class="flex items-center gap-1.5">
+                                        <span>Nama Staf</span>
+                                        <i class="fas fa-sort text-slate-300 dark:text-slate-600 text-xs" data-col="nama"></i>
+                                    </div>
+                                </th>
+                                <th onclick="sortTable('unit')" class="sort-th px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                                    <div class="flex items-center gap-1.5">
+                                        <span>Unit</span>
+                                        <i class="fas fa-sort text-slate-300 dark:text-slate-600 text-xs" data-col="unit"></i>
+                                    </div>
+                                </th>
+                                <th onclick="sortTable('nama_projek')" class="sort-th px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                                    <div class="flex items-center gap-1.5">
+                                        <span>Portfolio</span>
+                                        <i class="fas fa-sort text-slate-300 dark:text-slate-600 text-xs" data-col="nama_projek"></i>
+                                    </div>
+                                </th>
+                                <th onclick="sortTable('kekerapan')" class="sort-th px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                                    <div class="flex items-center gap-1.5">
+                                        <span>Kekerapan</span>
+                                        <i class="fas fa-sort text-slate-300 dark:text-slate-600 text-xs" data-col="kekerapan"></i>
+                                    </div>
+                                </th>
+                                <th onclick="sortTable('jam_seminggu')" class="sort-th px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition text-center">
+                                    <div class="flex items-center justify-center gap-1.5">
+                                        <span>Jam/Minggu</span>
+                                        <i class="fas fa-sort text-slate-300 dark:text-slate-600 text-xs" data-col="jam_seminggu"></i>
+                                    </div>
+                                </th>
+                                <th onclick="sortTable('beban_tinggi')" class="sort-th px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition text-center">
+                                    <div class="flex items-center justify-center gap-1.5">
+                                        <span>Beban</span>
+                                        <i class="fas fa-sort text-slate-300 dark:text-slate-600 text-xs" data-col="beban_tinggi"></i>
+                                    </div>
+                                </th>
                             </tr>
                         </thead>
                         <tbody id="main-table-body" class="divide-y divide-slate-100 text-sm text-slate-700"></tbody>
@@ -491,11 +614,11 @@
                     <span class="text-xs text-slate-400" id="table-page-info">—</span>
                     <div class="flex items-center gap-2">
                         <button onclick="changePage(-1)" id="table-prev"
-                            class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-semibold transition-colors" disabled>
+                            class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-semibold transition-colors page-btn" disabled>
                             <i class="fas fa-chevron-left mr-1"></i>Sebelum
                         </button>
                         <button onclick="changePage(1)" id="table-next"
-                            class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-semibold transition-colors" disabled>
+                            class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-semibold transition-colors page-btn" disabled>
                             Seterusnya<i class="fas fa-chevron-right ml-1"></i>
                         </button>
                     </div>
@@ -507,12 +630,12 @@
 </div>
 
 <script type="module">
-    import { initializeApp }                                           from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword,
              createUserWithEmailAndPassword,
-             onAuthStateChanged, signOut }                            from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+             onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, collection, addDoc, onSnapshot, query,
-             serverTimestamp, doc, updateDoc, deleteDoc }             from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+             serverTimestamp, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey:            "AIzaSyDS_zr-h8GZlBGRqBdsu-yAlg_h_suwX8Q",
@@ -541,10 +664,26 @@
     let isDashboardUnlocked = false;
     let chartInstances      = {};
 
+    // Main Master Table State
     let tableAllData      = [];
     let tableFilteredData = [];
     let tableCurrentPage  = 1;
     const PAGE_SIZE       = 10;
+
+    // Sorting state for Senarai Lengkap Data table
+    let tableSortCol = null;
+    let tableSortDir = 'asc'; // 'asc' or 'desc'
+
+    // Sub-tables State (Beban Tinggi & Cadangan Serah)
+    const SUB_PAGE_SIZE = 5;
+
+    let bebanAllData      = [];
+    let bebanFilteredData = [];
+    let bebanCurrentPage  = 1;
+
+    let serahAllData      = [];
+    let serahFilteredData = [];
+    let serahCurrentPage  = 1;
 
     const PAL = ['#3b82f6','#8b5cf6','#10b981','#f59e0b','#ef4444',
                  '#06b6d4','#ec4899','#6366f1','#84cc16','#f97316'];
@@ -626,6 +765,36 @@
         _switchTabCore(name);
     };
 
+    // Custom confirm dialog (replaces browser confirm)
+    function customConfirm(title, message) {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('confirm-modal');
+            const titleEl = document.getElementById('confirm-title');
+            const msgEl = document.getElementById('confirm-msg');
+            const okBtn = document.getElementById('confirm-btn-ok');
+            const cancelBtn = document.getElementById('confirm-btn-cancel');
+
+            titleEl.textContent = title;
+            msgEl.textContent = message;
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            const cleanup = () => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                okBtn.removeEventListener('click', onOk);
+                cancelBtn.removeEventListener('click', onCancel);
+            };
+
+            const onOk = () => { cleanup(); resolve(true); };
+            const onCancel = () => { cleanup(); resolve(false); };
+
+            okBtn.addEventListener('click', onOk);
+            cancelBtn.addEventListener('click', onCancel);
+        });
+    }
+
     async function initApp() {
         app  = initializeApp(firebaseConfig);
         auth = getAuth(app);
@@ -647,15 +816,43 @@
             processData(globalData, e.target.value);
         });
 
+        // Search in Main Table
         document.getElementById('table-search').addEventListener('input', e => {
-            const q = e.target.value.toLowerCase();
+            const q = e.target.value.toLowerCase().trim();
             tableFilteredData = tableAllData.filter(d =>
-                (d.nama       || '').toLowerCase().includes(q) ||
-                (d.nama_projek|| '').toLowerCase().includes(q) ||
-                (d.unit       || '').toLowerCase().includes(q)
+                (d.nama        || '').toLowerCase().includes(q) ||
+                (d.nama_projek || '').toLowerCase().includes(q) ||
+                (d.unit        || '').toLowerCase().includes(q)
             );
+            if (tableSortCol) {
+                applyTableSort(tableFilteredData);
+            }
             tableCurrentPage = 1;
             renderTablePage();
+        });
+
+        // Search in Beban Tinggi Table
+        document.getElementById('search-beban-tinggi').addEventListener('input', e => {
+            const q = e.target.value.toLowerCase();
+            bebanFilteredData = bebanAllData.filter(d =>
+                (d.nama_projek || '').toLowerCase().includes(q) ||
+                (d.nama        || '').toLowerCase().includes(q) ||
+                (d.unit        || '').toLowerCase().includes(q)
+            );
+            bebanCurrentPage = 1;
+            renderBebanTablePage();
+        });
+
+        // Search in Cadangan Serah Tugas Table
+        document.getElementById('search-serah-tugas').addEventListener('input', e => {
+            const q = e.target.value.toLowerCase();
+            serahFilteredData = serahAllData.filter(g =>
+                g.nama_projek.toLowerCase().includes(q) ||
+                Array.from(g.units).some(u => u.toLowerCase().includes(q)) ||
+                Array.from(g.cadangan).some(c => c.toLowerCase().includes(q))
+            );
+            serahCurrentPage = 1;
+            renderSerahTablePage();
         });
 
         onAuthStateChanged(auth, user => {
@@ -754,7 +951,8 @@
     }
 
     window.deleteMyData = async function(docId) {
-        if (!confirm("Adakah anda pasti mahu memadam portfolio ini? Tindakan ini tidak boleh diundur.")) return;
+        const confirmed = await customConfirm("Padam Portfolio", "Adakah anda pasti mahu memadam portfolio ini? Tindakan ini tidak boleh diundur.");
+        if (!confirmed) return;
         try { await deleteDoc(doc(db, "portfolios", docId)); showMessage("Data berjaya dipadam."); }
         catch { showMessage("Ralat memadam data.", true); }
     };
@@ -1115,51 +1313,226 @@
     }
 
     function drawBebanTinggiTable(data) {
+        bebanAllData = data.filter(d => d.beban_tinggi === 'Ya')
+                           .sort((a, b) => (b.jam_seminggu || 0) - (a.jam_seminggu || 0));
+        
+        document.getElementById('search-beban-tinggi').value = '';
+        bebanFilteredData = [...bebanAllData];
+        bebanCurrentPage = 1;
+        renderBebanTablePage();
+    }
+
+    function renderBebanTablePage() {
         const tbody = document.getElementById('tbody-beban-tinggi');
         const empty = document.getElementById('beban-empty');
+        const countEl = document.getElementById('beban-tinggi-count');
+        const pageInfo = document.getElementById('beban-page-info');
+        const prevBtn = document.getElementById('beban-prev');
+        const nextBtn = document.getElementById('beban-next');
+
+        countEl.innerText = `${bebanAllData.length} rekod`;
+
         if (!tbody) return;
-        const rows = data.filter(d => d.beban_tinggi === 'Ya').sort((a, b) => (b.jam_seminggu || 0) - (a.jam_seminggu || 0));
-        document.getElementById('beban-tinggi-count').innerText = `${rows.length} rekod`;
         tbody.innerHTML = '';
-        if (!rows.length) { empty.classList.remove('hidden'); return; }
+
+        if (!bebanFilteredData.length) {
+            empty.classList.remove('hidden');
+            pageInfo.innerText = '0 rekod';
+            prevBtn.disabled = true;
+            nextBtn.disabled = true;
+            return;
+        }
+
         empty.classList.add('hidden');
-        rows.slice(0, 8).forEach(d => {
+        const totalPages = Math.ceil(bebanFilteredData.length / SUB_PAGE_SIZE);
+        const start = (bebanCurrentPage - 1) * SUB_PAGE_SIZE;
+        const pageItems = bebanFilteredData.slice(start, start + SUB_PAGE_SIZE);
+
+        pageItems.forEach(d => {
             const tr = document.createElement('tr');
             tr.className = 'data-tr';
             tr.innerHTML = `
-                <td class="px-4 py-3 font-medium text-slate-700 max-w-[180px] truncate" title="${d.nama_projek || ''}">${d.nama_projek || '-'}</td>
-                <td class="px-4 py-3 text-slate-500 text-xs leading-tight">${d.nama || '-'}<br><span class="text-slate-400">${d.unit || '-'}</span></td>
+                <td class="px-4 py-3 font-medium text-slate-700 max-w-[170px] truncate" title="${d.nama_projek || ''}">${d.nama_projek || '-'}</td>
+                <td class="px-4 py-3 text-slate-500 text-xs leading-tight">${d.nama || '-'}<br><span class="text-slate-400 text-[11px]">${d.unit || '-'}</span></td>
                 <td class="px-4 py-3 text-right font-bold text-red-600">${d.jam_seminggu || 0}</td>`;
             tbody.appendChild(tr);
         });
+
+        pageInfo.innerText = `Hal ${bebanCurrentPage}/${totalPages} (${bebanFilteredData.length})`;
+        prevBtn.disabled = bebanCurrentPage <= 1;
+        nextBtn.disabled = bebanCurrentPage >= totalPages;
     }
+
+    window.changeBebanPage = function(dir) {
+        const total = Math.ceil(bebanFilteredData.length / SUB_PAGE_SIZE);
+        bebanCurrentPage = Math.max(1, Math.min(total, bebanCurrentPage + dir));
+        renderBebanTablePage();
+    };
 
     function drawSerahTugasTable(data) {
-        const tbody = document.getElementById('tbody-serah-tugas');
-        const empty = document.getElementById('serah-empty');
-        if (!tbody) return;
-        const rows = data.filter(d => d.serah_unit === 'Ya');
-        document.getElementById('serah-tugas-count').innerText = `${rows.length} rekod`;
-        tbody.innerHTML = '';
-        if (!rows.length) { empty.classList.remove('hidden'); return; }
-        empty.classList.add('hidden');
-        rows.slice(0, 8).forEach(d => {
-            const tr = document.createElement('tr');
-            tr.className = 'data-tr';
-            tr.innerHTML = `
-                <td class="px-4 py-3 font-medium text-slate-700 max-w-[150px] truncate" title="${d.nama_projek || ''}">${d.nama_projek || '-'}</td>
-                <td class="px-4 py-3 text-slate-500 text-xs">${d.unit || '-'}</td>
-                <td class="px-4 py-3 text-xs font-semibold text-amber-700">${d.cadangan_serah || '<span class="text-slate-400 font-normal">Tiada maklumat</span>'}</td>`;
-            tbody.appendChild(tr);
+        const candidates = data.filter(d => d.serah_unit === 'Ya');
+
+        // Intelligently group by project title (case-insensitive & whitespace trimmed)
+        const groupsMap = new Map();
+
+        candidates.forEach(d => {
+            const rawTitle = (d.nama_projek || 'Tiada Nama').trim();
+            const normKey  = rawTitle.toLowerCase();
+
+            if (!groupsMap.has(normKey)) {
+                groupsMap.set(normKey, {
+                    nama_projek: rawTitle,
+                    units: new Set(),
+                    stafList: new Set(),
+                    cadangan: new Set(),
+                    count: 0
+                });
+            }
+
+            const g = groupsMap.get(normKey);
+            if (d.unit) g.units.add(d.unit);
+            if (d.nama) g.stafList.add(d.nama);
+            if (d.cadangan_serah && d.cadangan_serah.trim()) {
+                g.cadangan.add(d.cadangan_serah.trim());
+            }
+            g.count += 1;
         });
+
+        serahAllData = Array.from(groupsMap.values()).sort((a, b) => b.count - a.count);
+
+        document.getElementById('search-serah-tugas').value = '';
+        serahFilteredData = [...serahAllData];
+        serahCurrentPage = 1;
+        renderSerahTablePage();
     }
 
+    function renderSerahTablePage() {
+        const tbody = document.getElementById('tbody-serah-tugas');
+        const empty = document.getElementById('serah-empty');
+        const countEl = document.getElementById('serah-tugas-count');
+        const pageInfo = document.getElementById('serah-page-info');
+        const prevBtn = document.getElementById('serah-prev');
+        const nextBtn = document.getElementById('serah-next');
+
+        countEl.innerText = `${serahAllData.length} projek`;
+
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        if (!serahFilteredData.length) {
+            empty.classList.remove('hidden');
+            pageInfo.innerText = '0 projek';
+            prevBtn.disabled = true;
+            nextBtn.disabled = true;
+            return;
+        }
+
+        empty.classList.add('hidden');
+        const totalPages = Math.ceil(serahFilteredData.length / SUB_PAGE_SIZE);
+        const start = (serahCurrentPage - 1) * SUB_PAGE_SIZE;
+        const pageItems = serahFilteredData.slice(start, start + SUB_PAGE_SIZE);
+
+        pageItems.forEach(g => {
+            const tr = document.createElement('tr');
+            tr.className = 'data-tr';
+
+            const unitsArr = Array.from(g.units);
+            const unitsHtml = unitsArr.length > 0 
+                ? unitsArr.map(u => `<span class="inline-block bg-slate-100 dark:bg-slate-700/90 border border-slate-200 dark:border-slate-600 px-1.5 py-0.5 rounded text-[11px] text-slate-700 dark:text-slate-200 mr-1 mb-1 font-medium">${u}</span>`).join('') 
+                : '<span class="text-slate-400 italic">Tiada Unit</span>';
+
+            const cadanganArr = Array.from(g.cadangan);
+            const cadanganHtml = cadanganArr.length > 0
+                ? cadanganArr.map(c => `<span class="inline-flex items-center gap-1 bg-amber-50 text-amber-800 dark:bg-amber-950/70 dark:text-amber-200 border border-amber-200/80 dark:border-amber-800/80 px-2 py-0.5 rounded-full text-[11px] font-medium mr-1 mb-1"><i class="fas fa-user-check text-[9px] text-amber-500 dark:text-amber-400"></i> ${c}</span>`).join('')
+                : '<span class="text-slate-400 italic font-normal">Tiada cadangan penerima</span>';
+
+            const countBadge = g.count > 1 
+                ? `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/80 dark:text-amber-100 border border-amber-300 dark:border-amber-700 ml-1.5" title="Digabungkan daripada ${g.count} responden"><i class="fas fa-layer-group text-[9px]"></i> ${g.count} staf</span>`
+                : '';
+
+            const stafSummary = Array.from(g.stafList).slice(0, 3).join(', ') + (g.stafList.size > 3 ? '...' : '');
+
+            tr.innerHTML = `
+                <td class="px-4 py-3 align-top">
+                    <div class="font-bold text-slate-800 dark:text-slate-100 flex items-center flex-wrap">
+                        ${g.nama_projek}
+                        ${countBadge}
+                    </div>
+                    <p class="text-[10px] text-slate-400 dark:text-slate-400 mt-0.5" title="${Array.from(g.stafList).join(', ')}">Oleh: ${stafSummary || 'Staf'}</p>
+                </td>
+                <td class="px-4 py-3 align-top">${unitsHtml}</td>
+                <td class="px-4 py-3 align-top">${cadanganHtml}</td>`;
+            tbody.appendChild(tr);
+        });
+
+        pageInfo.innerText = `Hal ${serahCurrentPage}/${totalPages} (${serahFilteredData.length})`;
+        prevBtn.disabled = serahCurrentPage <= 1;
+        nextBtn.disabled = serahCurrentPage >= totalPages;
+    }
+
+    window.changeSerahPage = function(dir) {
+        const total = Math.ceil(serahFilteredData.length / SUB_PAGE_SIZE);
+        serahCurrentPage = Math.max(1, Math.min(total, serahCurrentPage + dir));
+        renderSerahTablePage();
+    };
+
     function drawMainTable(data) {
-        tableAllData      = data;
+        tableAllData      = [...data];
         tableFilteredData = [...data];
         document.getElementById('table-search').value = '';
         tableCurrentPage  = 1;
+        if (tableSortCol) {
+            applyTableSort(tableFilteredData);
+        }
+        updateSortIcons();
         renderTablePage();
+    }
+
+    // Sort column handler for Senarai Lengkap Data
+    window.sortTable = function(col) {
+        if (tableSortCol === col) {
+            tableSortDir = tableSortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+            tableSortCol = col;
+            tableSortDir = 'asc';
+        }
+
+        applyTableSort(tableFilteredData);
+        updateSortIcons();
+        tableCurrentPage = 1;
+        renderTablePage();
+    };
+
+    function applyTableSort(list) {
+        if (!tableSortCol) return;
+        const dir = tableSortDir === 'asc' ? 1 : -1;
+
+        list.sort((a, b) => {
+            if (tableSortCol === 'jam_seminggu') {
+                const valA = parseFloat(a.jam_seminggu) || 0;
+                const valB = parseFloat(b.jam_seminggu) || 0;
+                return (valA - valB) * dir;
+            } else if (tableSortCol === 'beban_tinggi') {
+                const valA = (a.beban_tinggi || '').toLowerCase();
+                const valB = (b.beban_tinggi || '').toLowerCase();
+                return valA.localeCompare(valB) * dir;
+            } else {
+                const valA = String(a[tableSortCol] || '').toLowerCase();
+                const valB = String(b[tableSortCol] || '').toLowerCase();
+                return valA.localeCompare(valB, 'ms', { sensitivity: 'base' }) * dir;
+            }
+        });
+    }
+
+    function updateSortIcons() {
+        document.querySelectorAll('.sort-th i[data-col]').forEach(icon => {
+            const col = icon.getAttribute('data-col');
+            if (col === tableSortCol) {
+                icon.className = `fas fa-sort-${tableSortDir === 'asc' ? 'up' : 'down'} text-blue-600 dark:text-blue-400 text-xs font-bold`;
+            } else {
+                icon.className = 'fas fa-sort text-slate-300 dark:text-slate-600 text-xs';
+            }
+        });
     }
 
     function renderTablePage() {
@@ -1186,12 +1559,12 @@
                     ? '<span class="badge badge-green"><i class="fas fa-check-circle"></i>Normal</span>'
                     : '<span class="badge badge-slate">—</span>';
             tr.innerHTML = `
-                <td class="px-4 py-3 text-slate-400 text-xs">${start + i + 1}</td>
-                <td class="px-4 py-3 font-semibold text-slate-800">${d.nama || '-'}</td>
-                <td class="px-4 py-3 text-slate-500 text-xs">${d.unit || '-'}</td>
-                <td class="px-4 py-3 text-slate-700">${d.nama_projek || '-'}</td>
-                <td class="px-4 py-3 text-slate-500 text-xs">${d.kekerapan || '-'}</td>
-                <td class="px-4 py-3 text-center font-bold text-blue-600">${d.jam_seminggu || 0}</td>
+                <td class="px-4 py-3 text-slate-400 text-xs font-mono">${start + i + 1}</td>
+                <td class="px-4 py-3 font-semibold text-slate-800 dark:text-slate-100">${d.nama || '-'}</td>
+                <td class="px-4 py-3 text-slate-500 dark:text-slate-400 text-xs">${d.unit || '-'}</td>
+                <td class="px-4 py-3 text-slate-700 dark:text-slate-200 font-medium">${d.nama_projek || '-'}</td>
+                <td class="px-4 py-3 text-slate-500 dark:text-slate-400 text-xs">${d.kekerapan || '-'}</td>
+                <td class="px-4 py-3 text-center font-bold text-blue-600 dark:text-blue-400 font-mono">${d.jam_seminggu || 0}</td>
                 <td class="px-4 py-3 text-center">${badge}</td>`;
             tbody.appendChild(tr);
         });
@@ -1243,9 +1616,13 @@
 
     window.toggleDarkMode = function() {
         const body = document.body;
+        const html = document.documentElement;
         const icon = document.querySelector('#btn-dark i');
         const btn  = document.getElementById('btn-dark');
+
         body.classList.toggle('dark-mode');
+        html.classList.toggle('dark');
+
         if (body.classList.contains('dark-mode')) {
             icon.classList.replace('fa-moon', 'fa-sun');
             btn.classList.replace('text-yellow-400', 'text-yellow-200');
