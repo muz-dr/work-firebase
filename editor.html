@@ -8,6 +8,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome 6 Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SheetJS (xlsx) for Native Excel Template & Upload -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <!-- Google Inter Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -273,10 +275,22 @@
                     <i class="fas fa-plus text-xs"></i> Tambah Baris
                 </button>
 
-                <!-- Export CSV -->
-                <button onclick="exportToCsv()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold transition flex items-center gap-1.5">
-                    <i class="fas fa-download text-xs"></i> CSV
-                </button>
+                <!-- Bulk Excel Template & Upload Group -->
+                <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-700/60 p-0.5 rounded-xl border border-slate-200 dark:border-slate-700">
+                    <button onclick="downloadExcelTemplate()" class="px-2.5 py-1.5 hover:bg-white dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold transition flex items-center gap-1.5" title="Muat turun templat Excel kosong bersedia dengan lajur dan panduan format">
+                        <i class="fas fa-file-excel text-emerald-600 dark:text-emerald-400"></i> Templat
+                    </button>
+                    <button onclick="openBulkUploadModal()" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-sm" title="Muat naik fail Excel (.xlsx / .csv) untuk kemaskini pukal">
+                        <i class="fas fa-file-import text-xs"></i> Muat Naik Excel
+                    </button>
+                </div>
+
+                <!-- Export Options Dropdown -->
+                <div class="relative inline-block text-left">
+                    <button onclick="exportToXlsx()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold transition flex items-center gap-1.5" title="Eksport jadual semasa ke fail Excel (.xlsx)">
+                        <i class="fas fa-file-arrow-down text-emerald-600 text-xs"></i> Eksport .xlsx
+                    </button>
+                </div>
             </div>
 
             <!-- Right Profile & Theme -->
@@ -398,6 +412,99 @@
             <div class="mt-5 pt-3 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-2">
                 <button onclick="closeTagPicker()" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">Batal</button>
                 <button id="tag-picker-confirm-btn" class="px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700">Gunakan Pilihan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Upload Modal with Drag & Drop and Preview -->
+    <div id="bulk-upload-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 max-w-2xl w-full overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="p-5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/80">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-lg">
+                        <i class="fas fa-file-excel"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-base text-slate-900 dark:text-white">Muat Naik & Kemaskini Pukal Excel</h3>
+                        <p class="text-xs text-slate-400">Sistem akan memadankan lajur dan memasukkan ke jadual editor</p>
+                    </div>
+                </div>
+                <button onclick="closeBulkUploadModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-sm p-1.5">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="p-6 overflow-y-auto space-y-4 flex-1 text-xs">
+                <!-- Dropzone Area -->
+                <div id="excel-dropzone" onclick="document.getElementById('excel-file-input').click()"
+                    class="border-2 border-dashed border-emerald-300 dark:border-emerald-700 hover:border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20 rounded-2xl p-8 text-center cursor-pointer transition flex flex-col items-center justify-center gap-2">
+                    <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleExcelFileSelect(event)">
+                    <div class="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-600 flex items-center justify-center text-xl mb-1">
+                        <i class="fas fa-cloud-arrow-up"></i>
+                    </div>
+                    <p class="text-sm font-bold text-slate-800 dark:text-slate-100">Klik untuk pilih fail Excel atau seret fail ke sini</p>
+                    <p class="text-[11px] text-slate-400">Menyokong format .xlsx, .xls atau .csv</p>
+                    <div class="mt-2 inline-flex items-center gap-2 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-100/60 dark:bg-emerald-900/40 px-3 py-1 rounded-full">
+                        <i class="fas fa-circle-info"></i> Pilihan berbilang (Tanggungjawab / Bulan Sibuk): pisahkan dengan tanda koma (,)
+                    </div>
+                </div>
+
+                <!-- Preview Area (Appears after file read) -->
+                <div id="upload-preview-container" class="hidden space-y-3 pt-2">
+                    <div class="flex items-center justify-between bg-slate-100 dark:bg-slate-700/50 p-3 rounded-xl border border-slate-200 dark:border-slate-600">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-check-circle text-emerald-600 text-sm"></i>
+                            <span id="preview-file-name" class="font-bold text-slate-800 dark:text-white">nama_fail.xlsx</span>
+                            <span id="preview-row-count" class="ml-2 px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200 font-bold">0 baris dijumpai</span>
+                        </div>
+                        <button onclick="clearSelectedFile()" class="text-xs text-red-500 hover:text-red-700 font-semibold">Tukar Fail</button>
+                    </div>
+
+                    <div class="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden max-h-48 overflow-y-auto">
+                        <table class="w-full text-left text-[11px]">
+                            <thead class="bg-slate-100 dark:bg-slate-700 sticky top-0 text-slate-600 dark:text-slate-300 font-semibold">
+                                <tr>
+                                    <th class="p-2 w-8">#</th>
+                                    <th class="p-2">Nama</th>
+                                    <th class="p-2">Unit</th>
+                                    <th class="p-2">Portfolio</th>
+                                    <th class="p-2 text-center">Jam</th>
+                                    <th class="p-2 text-center">Beban Tinggi</th>
+                                    <th class="p-2">Tanggungjawab</th>
+                                </tr>
+                            </thead>
+                            <tbody id="preview-table-body" class="divide-y divide-slate-100 dark:divide-slate-700 text-slate-700 dark:text-slate-200">
+                                <!-- Preview rows inserted dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Merge option toggle -->
+                    <div class="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl flex items-start gap-2.5 text-amber-800 dark:text-amber-300 text-xs">
+                        <i class="fas fa-lightbulb mt-0.5 text-amber-600"></i>
+                        <div class="flex-1">
+                            <p class="font-bold">Mod Kemas Kini:</p>
+                            <p class="text-[11px] text-amber-700 dark:text-amber-400 mt-0.5">
+                                Jika kolum <code class="font-mono font-bold bg-amber-100 dark:bg-amber-900/50 px-1 rounded">ID</code> mengandungi ID dokumen Firestore yang sah, rekod tersebut akan dikemaskini. Jika kolum ID kosong atau baharu, baris baharu akan ditambah ke jadual.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                <button onclick="downloadExcelTemplate()" class="text-emerald-700 dark:text-emerald-400 hover:underline font-bold text-xs flex items-center gap-1.5">
+                    <i class="fas fa-download"></i> Muat Turun Templat Excel
+                </button>
+                <div class="flex items-center gap-2">
+                    <button onclick="closeBulkUploadModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+                        Batal
+                    </button>
+                    <button id="btn-apply-bulk-excel" onclick="applyBulkExcelData()" disabled
+                        class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-emerald-700 shadow-sm transition flex items-center gap-1.5">
+                        <i class="fas fa-check"></i> Masukkan ke Jadual
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -1004,6 +1111,363 @@
 
     let activePickerRecordId = null;
     let activePickerField = null;
+    let stagedParsedExcelRows = []; // Temporarily parsed rows for bulk upload modal
+
+    // Open/close bulk upload modal
+    window.openBulkUploadModal = function() {
+        const m = document.getElementById('bulk-upload-modal');
+        m.classList.remove('hidden');
+        m.classList.add('flex');
+        clearSelectedFile();
+    };
+
+    window.closeBulkUploadModal = function() {
+        const m = document.getElementById('bulk-upload-modal');
+        m.classList.add('hidden');
+        m.classList.remove('flex');
+        stagedParsedExcelRows = [];
+    };
+
+    window.clearSelectedFile = function() {
+        document.getElementById('excel-file-input').value = '';
+        document.getElementById('upload-preview-container').classList.add('hidden');
+        document.getElementById('excel-dropzone').classList.remove('hidden');
+        document.getElementById('btn-apply-bulk-excel').disabled = true;
+        stagedParsedExcelRows = [];
+    };
+
+    // Handle drag and drop listeners
+    const dropzone = document.getElementById('excel-dropzone');
+    if (dropzone) {
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropzone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.classList.add('border-emerald-600', 'bg-emerald-100/50');
+            }, false);
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.classList.remove('border-emerald-600', 'bg-emerald-100/50');
+            }, false);
+        });
+        dropzone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files.length) {
+                parseExcelFile(files[0]);
+            }
+        });
+    }
+
+    window.handleExcelFileSelect = function(event) {
+        const file = event.target.files[0];
+        if (file) {
+            parseExcelFile(file);
+        }
+    };
+
+    function parseExcelFile(file) {
+        if (!window.XLSX) {
+            showToast("Perpustakaan SheetJS belum dimuatkan sepenuhnya.", "error");
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+
+                // Parse into array of objects with headers
+                const jsonRows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+                if (!jsonRows || jsonRows.length === 0) {
+                    showToast("Fail Excel tidak mengandungi sebarang baris data.", "warning");
+                    return;
+                }
+
+                // Normalize columns & parse into standard structure
+                stagedParsedExcelRows = jsonRows.map(row => normalizeUploadedRow(row));
+
+                displayExcelPreview(file.name, stagedParsedExcelRows);
+            } catch (err) {
+                console.error("Error parsing Excel:", err);
+                showToast("Gagal membaca fail Excel: " + err.message, "error");
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    // Flexible column mapping supporting Bahasa Melayu and variations
+    function normalizeUploadedRow(raw) {
+        const getVal = (...keys) => {
+            for (const k of keys) {
+                for (const rowKey of Object.keys(raw)) {
+                    if (rowKey.trim().toLowerCase() === k.toLowerCase()) {
+                        return String(raw[rowKey]).trim();
+                    }
+                }
+            }
+            return "";
+        };
+
+        const splitMulti = (str) => {
+            if (!str) return [];
+            return str
+                .split(/[,;\n|]+/)
+                .map(s => s.trim())
+                .filter(s => s.length > 0);
+        };
+
+        const idVal = getVal('id', 'id dokumen', 'doc_id', 'doc id');
+        const namaVal = getVal('nama staf', 'nama', 'staf', 'nama pekerja');
+        const unitVal = getVal('unit', 'nama unit', 'bahagian');
+        const projekVal = getVal('nama projek / portfolio', 'nama projek', 'projek', 'nama portfolio', 'portfolio');
+        const kekerapanVal = getVal('kekerapan', 'frequency') || 'Bulanan';
+        const jamVal = parseFloat(getVal('jam/minggu', 'jam seminggu', 'jam', 'hours')) || 0;
+        
+        let bebanVal = getVal('beban tinggi?', 'beban tinggi', 'beban', 'high burden');
+        bebanVal = bebanVal.toLowerCase().startsWith('y') ? 'Ya' : 'Tidak';
+
+        const stafCountVal = getVal('bil. staf', 'bilangan staf', 'jumlah staf', 'staff count') || '1 orang';
+        
+        let agensiVal = getVal('agensi lain?', 'agensi lain', 'penglibatan agensi');
+        agensiVal = agensiVal.toLowerCase().startsWith('y') ? 'Ya' : 'Tidak';
+
+        let serahVal = getVal('serah unit?', 'serah unit', 'diserahkan kepada unit lain?');
+        serahVal = serahVal.toLowerCase().startsWith('y') ? 'Ya' : 'Tidak';
+
+        const cadanganSerahVal = getVal('cadangan serah kepada', 'cadangan serah', 'serah kepada');
+        const emailVal = getVal('emel pengirim', 'emel', 'email', 'emel staf') || (currentUser?.email || AUTHORIZED_ADMIN_EMAIL);
+        
+        const tjArr = splitMulti(getVal('tanggungjawab', 'responsibilities'));
+        const bulanArr = splitMulti(getVal('bulan sibuk', 'bulan paling sibuk', 'busy months'));
+
+        return {
+            id: idVal,
+            nama: namaVal,
+            unit: unitVal || 'Unit Survelan Klinikal',
+            nama_projek: projekVal || 'Aktiviti Excel',
+            kekerapan: kekerapanVal,
+            jam_seminggu: jamVal,
+            beban_tinggi: bebanVal,
+            jumlah_staf: stafCountVal,
+            penglibatan_agensi: agensiVal,
+            serah_unit: serahVal,
+            cadangan_serah: cadanganSerahVal,
+            email: emailVal,
+            tanggungjawab: tjArr.length ? tjArr : ['Merancang'],
+            bulan_sibuk: bulanArr.length ? bulanArr : ['Januari']
+        };
+    }
+
+    function displayExcelPreview(fileName, rows) {
+        document.getElementById('excel-dropzone').classList.add('hidden');
+        const container = document.getElementById('upload-preview-container');
+        container.classList.remove('hidden');
+
+        document.getElementById('preview-file-name').textContent = fileName;
+        document.getElementById('preview-row-count').textContent = `${rows.length} baris dibaca`;
+
+        const tbody = document.getElementById('preview-table-body');
+        tbody.innerHTML = '';
+
+        rows.slice(0, 15).forEach((r, idx) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="p-2 font-mono text-slate-400">${idx + 1}</td>
+                <td class="p-2 font-semibold text-slate-800 dark:text-white">${escapeHtml(r.nama || '-')}</td>
+                <td class="p-2 text-slate-500">${escapeHtml(r.unit || '-')}</td>
+                <td class="p-2 font-medium">${escapeHtml(r.nama_projek || '-')}</td>
+                <td class="p-2 text-center font-mono font-bold text-blue-600">${r.jam_seminggu}</td>
+                <td class="p-2 text-center">${r.beban_tinggi === 'Ya' ? '<span class="text-red-600 font-bold">Ya</span>' : 'Tidak'}</td>
+                <td class="p-2 text-slate-500 truncate max-w-[140px]" title="${escapeHtml(r.tanggungjawab.join(', '))}">
+                    ${escapeHtml(r.tanggungjawab.join(', '))}
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        if (rows.length > 15) {
+            const moreTr = document.createElement('tr');
+            moreTr.innerHTML = `<td colspan="7" class="p-2 text-center text-slate-400 italic bg-slate-50 dark:bg-slate-800/40">... dan ${rows.length - 15} lagi baris data</td>`;
+            tbody.appendChild(moreTr);
+        }
+
+        document.getElementById('btn-apply-bulk-excel').disabled = false;
+    }
+
+    // Apply parsed rows to working dataset
+    window.applyBulkExcelData = function() {
+        if (!stagedParsedExcelRows.length) return;
+
+        let updatedCount = 0;
+        let addedCount = 0;
+
+        stagedParsedExcelRows.forEach(row => {
+            let targetId = row.id;
+
+            // If an ID was supplied and exists in our current map, update it
+            if (targetId && workingDataMap.has(targetId)) {
+                const existing = workingDataMap.get(targetId);
+                Object.assign(existing, row);
+                dirtyRecordIds.add(targetId);
+                updatedCount++;
+            } else {
+                // Otherwise treat as a new insertion
+                newRowCounter++;
+                const newTempId = `new_excel_${Date.now()}_${newRowCounter}`;
+                row.id = newTempId;
+                workingDataMap.set(newTempId, row);
+                dirtyRecordIds.add(newTempId);
+                addedCount++;
+            }
+        });
+
+        closeBulkUploadModal();
+        renderTable();
+        updateChangeStatus();
+
+        showToast(`Berjaya memuatkan Excel: ${addedCount} baris baru ditambah, ${updatedCount} baris dikemaskini. Sila klik "Simpan Semua Perubahan".`, "warning");
+    };
+
+    // Download formatted blank Excel Template (.xlsx) with column guides and examples
+    window.downloadExcelTemplate = function() {
+        if (!window.XLSX) {
+            showToast("Perpustakaan Excel belum sedia.", "error");
+            return;
+        }
+
+        // Example rows with realistic data and comma-separated multiple choice
+        const sampleData = [
+            {
+                "ID": "", // Leave blank for new rows, or fill with Firestore Doc ID to update existing
+                "Nama Staf": "Dr. Ahmad Muzammil",
+                "Unit": "Unit Survelan Klinikal",
+                "Nama Projek / Portfolio": "Survelan Denggi Kebangsaan",
+                "Kekerapan": "Mingguan",
+                "Jam/Minggu": 8.5,
+                "Beban Tinggi?": "Ya",
+                "Bil. Staf": "3 orang",
+                "Agensi Lain?": "Ya",
+                "Serah Unit?": "Tidak",
+                "Cadangan Serah Kepada": "",
+                "Emel Pengirim": "drahmadmuzammil@moh.gov.my",
+                "Tanggungjawab": "Merancang, Memimpin, Menyelaras, Menganalisa",
+                "Bulan Sibuk": "Januari, Jun, Julai, Disember"
+            },
+            {
+                "ID": "",
+                "Nama Staf": "Pn. Siti Aminah",
+                "Unit": "Unit Kawalan Infeksi",
+                "Nama Projek / Portfolio": "Audit Hand Hygiene Wad",
+                "Kekerapan": "Bulanan",
+                "Jam/Minggu": 4.0,
+                "Beban Tinggi?": "Tidak",
+                "Bil. Staf": "2 orang",
+                "Agensi Lain?": "Tidak",
+                "Serah Unit?": "Ya",
+                "Cadangan Serah Kepada": "Pegawai Jururawat U32",
+                "Emel Pengirim": "drahmadmuzammil@moh.gov.my",
+                "Tanggungjawab": "Memantau, Mengumpul data, Mendokumentasi",
+                "Bulan Sibuk": "Mac, September"
+            }
+        ];
+
+        // Reference Sheet for Valid Dropdown Values
+        const refUnits = UNITS.map(u => ({ "Pilihan Unit Yang Sah": u }));
+        const refFrequencies = FREQUENCIES.map(f => ({ "Pilihan Kekerapan Sah": f }));
+        const refTJ = TJ_OPTIONS.map(t => ({ "Pilihan Tanggungjawab (Boleh gabung koma)": t }));
+        const refMonths = MONTHS.map(m => ({ "Pilihan Bulan (Boleh gabung koma)": m }));
+
+        const wb = XLSX.utils.book_new();
+
+        // Sheet 1: Template
+        const wsTemplate = XLSX.utils.json_to_sheet(sampleData);
+        // Column widths
+        wsTemplate['!cols'] = [
+            { wch: 22 }, // ID
+            { wch: 22 }, // Nama Staf
+            { wch: 30 }, // Unit
+            { wch: 32 }, // Nama Projek
+            { wch: 14 }, // Kekerapan
+            { wch: 12 }, // Jam/Minggu
+            { wch: 14 }, // Beban Tinggi
+            { wch: 14 }, // Bil. Staf
+            { wch: 14 }, // Agensi Lain
+            { wch: 14 }, // Serah Unit
+            { wch: 26 }, // Cadangan Serah Kepada
+            { wch: 28 }, // Emel Pengirim
+            { wch: 36 }, // Tanggungjawab
+            { wch: 30 }  // Bulan Sibuk
+        ];
+
+        XLSX.utils.book_append_sheet(wb, wsTemplate, "Templat Kemas Kini");
+
+        // Sheet 2: Panduan Nilai Pilihan
+        const wsRef = XLSX.utils.json_to_sheet(refUnits);
+        XLSX.utils.sheet_add_json(wsRef, refFrequencies, { origin: "C1" });
+        XLSX.utils.sheet_add_json(wsRef, refTJ, { origin: "E1" });
+        XLSX.utils.sheet_add_json(wsRef, refMonths, { origin: "G1" });
+
+        wsRef['!cols'] = [
+            { wch: 32 }, { wch: 4 }, { wch: 22 }, { wch: 4 }, { wch: 38 }, { wch: 4 }, { wch: 30 }
+        ];
+
+        XLSX.utils.book_append_sheet(wb, wsRef, "Panduan Pilihan Sah");
+
+        XLSX.writeFile(wb, "Templat_Beban_Kerja_MOH.xlsx");
+        showToast("Templat Excel berjaya dimuat turun dengan panduan lajur!");
+    };
+
+    // Native .xlsx export
+    window.exportToXlsx = function() {
+        if (!window.XLSX) {
+            window.exportToCsv();
+            return;
+        }
+
+        const rows = Array.from(workingDataMap.values()).filter(r => !deletedRecordIds.has(r.id));
+        if (!rows.length) {
+            showToast("Tiada data untuk dieksport.", "warning");
+            return;
+        }
+
+        const formatted = rows.map((r, idx) => ({
+            "No": idx + 1,
+            "ID": r.id.startsWith('new_') ? '' : r.id,
+            "Nama Staf": r.nama || '',
+            "Unit": r.unit || '',
+            "Nama Projek / Portfolio": r.nama_projek || '',
+            "Kekerapan": r.kekerapan || '',
+            "Jam/Minggu": parseFloat(r.jam_seminggu) || 0,
+            "Beban Tinggi?": r.beban_tinggi || 'Tidak',
+            "Bil. Staf": r.jumlah_staf || '',
+            "Agensi Lain?": r.penglibatan_agensi || 'Tidak',
+            "Serah Unit?": r.serah_unit || 'Tidak',
+            "Cadangan Serah Kepada": r.cadangan_serah || '',
+            "Emel Pengirim": r.email || '',
+            "Tanggungjawab": Array.isArray(r.tanggungjawab) ? r.tanggungjawab.join(', ') : '',
+            "Bulan Sibuk": Array.isArray(r.bulan_sibuk) ? r.bulan_sibuk.join(', ') : ''
+        }));
+
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(formatted);
+        ws['!cols'] = [
+            { wch: 6 }, { wch: 22 }, { wch: 22 }, { wch: 28 }, { wch: 30 },
+            { wch: 14 }, { wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 14 },
+            { wch: 14 }, { wch: 24 }, { wch: 26 }, { wch: 34 }, { wch: 28 }
+        ];
+
+        XLSX.utils.book_append_sheet(wb, ws, "Data Beban Kerja");
+        XLSX.writeFile(wb, `Beban_Kerja_Master_${new Date().toISOString().slice(0,10)}.xlsx`);
+        showToast("Fail Excel (.xlsx) berjaya dimuat turun!");
+    };
 
     window.openTagPicker = function(recordId, field) {
         activePickerRecordId = recordId;
