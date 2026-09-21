@@ -6,209 +6,215 @@
     <title>Analisis Beban Kerja</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3b82f6; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
+
+        .loader { border: 3px solid #e2e8f0; border-top: 3px solid #3b82f6; border-radius: 50%; width: 28px; height: 28px; animation: spin 0.8s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        body, div, nav, input, select, button, table { transition: background-color 0.3s, color 0.3s, border-color 0.3s; }   
+        @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
+        .shake { animation: shake 0.4s ease; }
+
+        body, div, nav, input, select, button, table { transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
         body.dark-mode { background-color: #0f172a !important; color: #f1f5f9 !important; }
         body.dark-mode .bg-white { background-color: #1e293b !important; border-color: #334155 !important; }
         body.dark-mode nav.bg-white { border-bottom-color: #334155 !important; }
         body.dark-mode .bg-slate-50, body.dark-mode .bg-blue-50, body.dark-mode .bg-emerald-50, body.dark-mode .bg-gray-100 { background-color: #0f172a !important; border-color: #334155 !important; color: #e2e8f0 !important; }
+        body.dark-mode .bg-red-50 { background-color: #2d1b1b !important; border-color: #7f1d1d !important; }
+        body.dark-mode .bg-amber-50 { background-color: #2d2000 !important; border-color: #78350f !important; }
         body.dark-mode .text-slate-800, body.dark-mode .text-slate-700, body.dark-mode .text-gray-700, body.dark-mode .text-blue-800, body.dark-mode .text-emerald-800 { color: #f8fafc !important; }
-        body.dark-mode .text-slate-600, body.dark-mode .text-gray-500, body.dark-mode .text-slate-500 { color: #94a3b8 !important; }
+        body.dark-mode .text-slate-600, body.dark-mode .text-gray-500, body.dark-mode .text-slate-500, body.dark-mode .text-slate-400 { color: #94a3b8 !important; }
         body.dark-mode input, body.dark-mode select { background-color: #0f172a !important; color: #f8fafc !important; border-color: #475569 !important; }
         body.dark-mode .border-slate-200, body.dark-mode .border-gray-200, body.dark-mode .border-gray-300, body.dark-mode .border-blue-100, body.dark-mode .border-emerald-100, body.dark-mode .border-slate-100 { border-color: #334155 !important; }
-        body.dark-mode td, body.dark-mode th { border-color: #334155 !important; color: #f1f5f9 !important;}
-        body.dark-mode tr.bg-slate-50 { background-color: #334155 !important; }
+        body.dark-mode td, body.dark-mode th { border-color: #334155 !important; color: #f1f5f9 !important; }
+        body.dark-mode .data-tr:hover { background-color: #1e3a5f !important; }
+        body.dark-mode .bg-slate-100 { background-color: #334155 !important; }
         body.dark-mode #user-nav .bg-slate-100 { background-color: #334155 !important; border-color: #475569 !important; }
         body.dark-mode #user-nav button.text-slate-700 { color: #f1f5f9 !important; border-color: #475569 !important; }
-        body.dark-mode #user-nav button.text-slate-700:hover { background-color: #475569 !important; }
+
+        #passkey-modal, #confirm-modal { backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+
+        .dash-card { transition: box-shadow 0.2s ease; }
+        .dash-card:hover { box-shadow: 0 12px 30px -6px rgba(0,0,0,0.1); }
+        .data-tr { transition: background-color 0.1s; cursor: default; }
+        .data-tr:hover { background-color: #f8fafc; }
+
+        .badge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 9999px; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.01em; }
+        .badge-red   { background: #fee2e2; color: #b91c1c; }
+        .badge-green { background: #dcfce7; color: #15803d; }
+        .badge-blue  { background: #dbeafe; color: #1d4ed8; }
+        .badge-amber { background: #fef9c3; color: #a16207; }
+        .badge-slate { background: #f1f5f9; color: #475569; }
+
+        .pbar-track { height: 5px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; margin-top: 10px; }
+        .pbar-fill   { height: 100%; border-radius: 9999px; transition: width 0.8s cubic-bezier(.4,0,.2,1); }
+
+        button:disabled { opacity: 0.4; cursor: not-allowed; }
     </style>
 </head>
 <body class="text-slate-800 pb-20">
 
-    <!-- TOP NAVIGATION -->
-    <nav class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-40">
-        <div class="w-full mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16 items-center">
-                <div class="flex items-center gap-3">
-                    <div class="bg-blue-600 text-white p-2 rounded-lg shadow-sm">
-                        <i class="fas fa-chart-pie"></i>
-                    </div>
-                    <h1 class="text-xl font-bold text-slate-800 hidden sm:block">Analisis Portfolio & Beban Kerja</h1>
-                    <h1 class="text-xl font-bold text-slate-800 sm:hidden">Analisis Beban</h1>
-                </div>
-                <!-- User Info & Logout (Hidden by default) -->
-                <div id="user-nav" class="hidden flex items-center gap-4 text-sm font-medium text-slate-600">
-                    <!-- Dark Mode Toggle -->
-                    <button onclick="toggleDarkMode()" id="btn-dark" class="px-3 py-1.5 bg-slate-800 text-yellow-400 hover:bg-slate-700 rounded-lg font-bold border border-slate-700 transition-colors shadow-sm" title="Tukar Tema">
-                        <i class="fas fa-moon"></i>
-                    </button>
-                    <!-- Font Size Changer -->
-                    <div class="hidden sm:flex bg-slate-100 rounded-lg overflow-hidden border border-slate-200">
-                        <button onclick="changeFontSize(-1)" class="px-3 py-1 hover:bg-slate-200 text-slate-700 font-bold border-r border-slate-300" title="Kecilkan Tulisan">A-</button>
-                        <button onclick="changeFontSize(0)" class="px-3 py-1 hover:bg-slate-200 text-slate-700 font-bold border-r border-slate-300" title="Saiz Asal">A</button>
-                        <button onclick="changeFontSize(1)" class="px-3 py-1 hover:bg-slate-200 text-slate-700 font-bold" title="Besarkan Tulisan">A+</button>
-                    </div>
-                    <span id="user-display-email" class="hidden md:inline-block bg-slate-100 px-3 py-1 rounded-full"></span>
-                    <button id="btn-logout" class="text-red-500 hover:text-red-700 flex items-center transition-colors">
-                        <i class="fas fa-sign-out-alt mr-2"></i>Log Keluar
-                    </button>
-                </div>
+<!-- Passkey Security Modal -->
+<div id="passkey-modal" class="fixed inset-0 bg-slate-900/60 z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden" onclick="event.stopPropagation()">
+        <div class="bg-gradient-to-br from-slate-700 to-slate-900 px-8 py-8 text-center">
+            <div class="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-lock text-3xl text-white/90"></i>
             </div>
-            
-            <!-- App Tabs (Hidden until login) -->
-            <div id="app-tabs" class="hidden flex space-x-6 border-t border-slate-100 overflow-x-auto">
-                <button onclick="switchTab('form')" id="tab-form" class="border-b-2 border-blue-500 text-blue-600 py-3 px-1 text-sm font-medium transition-colors whitespace-nowrap">
-                    <i class="fas fa-edit mr-2"></i>Borang Kajian
+            <h3 class="text-white font-bold text-xl tracking-tight">Akses Terhad</h3>
+            <p class="text-slate-300 text-sm mt-1">Papan Pemuka Analisis</p>
+        </div>
+        <div class="p-7 space-y-4">
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-2">Masukkan Kata Kunci</label>
+                <input type="password" id="passkey-input"
+                    class="w-full rounded-xl border-2 border-slate-200 px-4 py-3 text-center text-xl tracking-widest font-bold focus:ring-0 focus:border-slate-500 outline-none transition-colors"
+                    placeholder="● ● ● ● ● ●" maxlength="20"
+                    onkeydown="if(event.key==='Enter') verifyPasskey()">
+                <p id="passkey-error" class="hidden text-red-500 text-xs mt-2 text-center font-semibold">
+                    <i class="fas fa-times-circle mr-1"></i>Kata kunci tidak betul. Cuba lagi.
+                </p>
+            </div>
+            <button onclick="verifyPasskey()"
+                class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl px-4 py-3 transition-colors shadow-sm text-sm">
+                <i class="fas fa-unlock-alt mr-2"></i>Buka Kunci Dashboard
+            </button>
+            <button onclick="closePasskeyModal()"
+                class="w-full text-slate-400 hover:text-slate-600 text-sm font-medium py-1.5 transition-colors">
+                Batal
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Confirmation Dialog (No window.confirm) -->
+<div id="confirm-modal" class="fixed inset-0 bg-slate-900/60 z-50 hidden items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-6 text-center">
+        <div class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-3 text-xl">
+            <i class="fas fa-trash-alt"></i>
+        </div>
+        <h4 id="confirm-title" class="text-base font-bold text-slate-800 dark:text-white">Padam Rekod</h4>
+        <p id="confirm-msg" class="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-5">Adakah anda pasti? Tindakan ini tidak boleh diundur.</p>
+        <div class="flex gap-2">
+            <button id="confirm-btn-cancel" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold">Batal</button>
+            <button id="confirm-btn-ok" class="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold">Ya, Padam</button>
+        </div>
+    </div>
+</div>
+
+<nav class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-40">
+    <div class="w-full mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16 items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 text-white p-2 rounded-lg shadow-sm">
+                    <i class="fas fa-chart-pie"></i>
+                </div>
+                <h1 class="text-xl font-bold text-slate-800 hidden sm:block">Analisis Portfolio & Beban Kerja</h1>
+                <h1 class="text-xl font-bold text-slate-800 sm:hidden">Analisis Beban</h1>
+            </div>
+            <div id="user-nav" class="hidden items-center gap-3 text-sm font-medium text-slate-600">
+                <button onclick="toggleDarkMode()" id="btn-dark"
+                    class="px-3 py-1.5 bg-slate-800 text-yellow-400 hover:bg-slate-700 rounded-lg font-bold border border-slate-700 transition-colors shadow-sm" title="Tukar Tema">
+                    <i class="fas fa-moon"></i>
                 </button>
-                <button onclick="switchTab('mydata')" id="tab-mydata" class="border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-3 px-1 text-sm font-medium transition-colors whitespace-nowrap">
-                    <i class="fas fa-list mr-2"></i>Portfolio Saya
-                </button>
-                <button onclick="switchTab('dashboard')" id="tab-dashboard" class="border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-3 px-1 text-sm font-medium transition-colors whitespace-nowrap">
-                    <i class="fas fa-chart-line mr-2"></i>Papan Pemuka
+                <div class="hidden sm:flex bg-slate-100 rounded-lg overflow-hidden border border-slate-200">
+                    <button onclick="changeFontSize(-1)" class="px-3 py-1 hover:bg-slate-200 text-slate-700 font-bold border-r border-slate-300" title="Kecilkan">A-</button>
+                    <button onclick="changeFontSize(0)"  class="px-3 py-1 hover:bg-slate-200 text-slate-700 font-bold border-r border-slate-300" title="Asal">A</button>
+                    <button onclick="changeFontSize(1)"  class="px-3 py-1 hover:bg-slate-200 text-slate-700 font-bold" title="Besarkan">A+</button>
+                </div>
+                <span id="user-display-email" class="hidden md:inline-block bg-slate-100 px-3 py-1 rounded-full text-xs truncate max-w-[160px]"></span>
+                <button id="btn-logout" class="text-red-500 hover:text-red-700 flex items-center gap-1.5 transition-colors text-xs font-semibold">
+                    <i class="fas fa-sign-out-alt"></i>Log Keluar
                 </button>
             </div>
         </div>
-    </nav>
-
-    <div class="w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
-        <!-- SECTION: AUTHENTICATION (LOGIN/REGISTER) -->
-        <div id="auth-section" class="max-w-md mx-auto bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden mt-10">
-            <div class="bg-blue-600 px-6 py-6 text-center">
-                <i class="fas fa-user-lock text-4xl text-white mb-3"></i>
-                <h2 class="text-xl font-bold text-white">Log Masuk Staf</h2>
-                <p class="text-blue-100 text-sm mt-1">Sila log masuk untuk menghantar atau mengedit data.</p>
-            </div>
-            <form id="auth-form" class="p-6 space-y-5">
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">Alamat Emel</label>
-                    <input type="email" id="auth-email" required class="w-full rounded-md border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="cth: staf@moh.gov.my">
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">Kata Laluan</label>
-                    <input type="password" id="auth-password" required minlength="6" class="w-full rounded-md border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Minima 6 aksara">
-                </div>
-                <div class="pt-2 flex flex-col gap-3">
-                    <button type="button" id="btn-login" class="w-full bg-blue-600 text-white font-bold rounded-lg px-4 py-3 hover:bg-blue-700 transition-colors shadow-sm">
-                        Log Masuk
-                    </button>
-                    <div class="relative flex py-2 items-center">
-                        <div class="flex-grow border-t border-gray-300"></div>
-                        <span class="flex-shrink-0 mx-4 text-gray-400 text-sm">Atau</span>
-                        <div class="flex-grow border-t border-gray-300"></div>
-                    </div>
-                    <button type="button" id="btn-register" class="w-full bg-slate-100 text-slate-700 font-bold rounded-lg px-4 py-3 hover:bg-slate-200 transition-colors border border-slate-300">
-                        Daftar Akaun Baru
-                    </button>
-                </div>
-            </form>
+        <div id="app-tabs" class="hidden flex space-x-1 border-t border-slate-100 overflow-x-auto">
+            <button onclick="switchTab('form')" id="tab-form"
+                class="border-b-2 border-blue-500 text-blue-600 py-3 px-4 text-sm font-semibold transition-colors whitespace-nowrap">
+                <i class="fas fa-edit mr-1.5"></i>Borang Kajian
+            </button>
+            <button onclick="switchTab('mydata')" id="tab-mydata"
+                class="border-b-2 border-transparent text-gray-500 hover:text-gray-700 py-3 px-4 text-sm font-semibold transition-colors whitespace-nowrap">
+                <i class="fas fa-list mr-1.5"></i>Portfolio Saya
+            </button>
+            <button onclick="switchTab('dashboard')" id="tab-dashboard"
+                class="border-b-2 border-transparent text-gray-500 hover:text-gray-700 py-3 px-4 text-sm font-semibold transition-colors whitespace-nowrap">
+                <i class="fas fa-chart-line mr-1.5"></i>Papan Pemuka
+                <span id="dash-lock-badge" class="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold bg-slate-200 text-slate-500" title="Perlukan kata kunci">
+                    <i class="fas fa-lock text-xs"></i>
+                </span>
+            </button>
         </div>
+    </div>
+</nav>
 
-        <!-- MAIN APP SECTIONS (Hidden until login) -->
-        <div id="app-sections" class="hidden">
-            
-            <!-- SECTION: FORM -->
-            <div id="form-section" class="w-full mx-auto bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-                <div class="bg-blue-50 px-6 py-5 border-b border-blue-100 flex justify-between items-center">
+<div class="w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <div id="auth-section" class="max-w-md mx-auto bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden mt-10">
+        <div class="bg-blue-600 px-6 py-6 text-center">
+            <i class="fas fa-user-lock text-4xl text-white mb-3"></i>
+            <h2 class="text-xl font-bold text-white">Log Masuk Staf</h2>
+            <p class="text-blue-100 text-sm mt-1">Sila log masuk untuk menghantar atau mengedit data.</p>
+        </div>
+        <form id="auth-form" class="p-6 space-y-5">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Alamat Emel</label>
+                <input type="email" id="auth-email" required
+                    class="w-full rounded-md border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="cth: staf@moh.gov.my">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Kata Laluan</label>
+                <input type="password" id="auth-password" required minlength="6"
+                    class="w-full rounded-md border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="Minima 6 aksara">
+            </div>
+            <div class="pt-2 flex flex-col gap-3">
+                <button type="button" id="btn-login"
+                    class="w-full bg-blue-600 text-white font-bold rounded-lg px-4 py-3 hover:bg-blue-700 transition-colors shadow-sm">
+                    Log Masuk
+                </button>
+                <div class="relative flex py-2 items-center">
+                    <div class="flex-grow border-t border-gray-300"></div>
+                    <span class="flex-shrink-0 mx-4 text-gray-400 text-sm">Atau</span>
+                    <div class="flex-grow border-t border-gray-300"></div>
+                </div>
+                <button type="button" id="btn-register"
+                    class="w-full bg-slate-100 text-slate-700 font-bold rounded-lg px-4 py-3 hover:bg-slate-200 transition-colors border border-slate-300">
+                    Daftar Akaun Baru
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div id="app-sections" class="hidden">
+
+        <div id="form-section" class="w-full mx-auto bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+            <div class="bg-blue-50 px-6 py-5 border-b border-blue-100 flex justify-between items-center">
+                <div>
+                    <h2 class="text-lg font-bold text-blue-800" id="form-title">Maklumat Staf & Unit</h2>
+                    <p class="text-sm text-blue-600 mt-1" id="form-subtitle">Lengkapkan maklumat, kemudian senaraikan portfolio anda.</p>
+                </div>
+                <button type="button" id="btn-cancel-edit"
+                    class="hidden bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-2 rounded-md text-sm font-semibold transition-colors">
+                    Batal Edit
+                </button>
+            </div>
+            <form id="beban-form" class="p-6">
+                <div class="space-y-5 mb-8 bg-slate-50 p-5 rounded-lg border border-slate-200">
+                    <div class="hidden">
+                        <input type="email" id="email" class="w-full rounded-md border border-gray-300 px-4 py-2 bg-gray-100" readonly>
+                    </div>
                     <div>
-                        <h2 class="text-lg font-bold text-blue-800" id="form-title">Maklumat Staf & Unit</h2>
-                        <p class="text-sm text-blue-600 mt-1" id="form-subtitle">Lengkapkan maklumat, kemudian senaraikan portfolio anda.</p>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">2. Nama Penuh <span class="text-red-500">*</span></label>
+                        <input type="text" id="nama" required class="w-full rounded-md border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
                     </div>
-                    <!-- Cancel Edit Button (Hidden by default) -->
-                    <button type="button" id="btn-cancel-edit" class="hidden bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-2 rounded-md text-sm font-semibold transition-colors">
-                        Batal Edit
-                    </button>
-                </div>
-                <form id="beban-form" class="p-6">
-                    <!-- User Basic Info -->
-                    <div class="space-y-5 mb-8 bg-slate-50 p-5 rounded-lg border border-slate-200">
-                        <div class="hidden">
-                            <label class="block text-sm font-semibold text-gray-700 mb-1">1. Email <span class="text-red-500">*</span></label>
-                            <input type="email" id="email" class="w-full rounded-md border border-gray-300 px-4 py-2 bg-gray-100" readonly>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-1">2. Nama Penuh <span class="text-red-500">*</span></label>
-                            <input type="text" id="nama" required class="w-full rounded-md border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-1">3. Nama Unit <span class="text-red-500">*</span></label>
-                            <select id="unit" required class="w-full rounded-md border border-gray-300 px-4 py-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
-                                <option value="">-- Sila Pilih Unit Anda --</option>
-                                <option value="Unit Survelan Klinikal">Unit Survelan Klinikal</option>
-                                <option value="Unit Pengurusan Risiko (Pesakit)">Unit Pengurusan Risiko (Pesakit)</option>
-                                <option value="Unit Pengurusan Risiko (Pekerjaan)">Unit Pengurusan Risiko (Pekerjaan)</option>
-                                <option value="Unit Kawalan Infeksi">Unit Kawalan Infeksi</option>
-                                <option value="Unit Pentadbiran">Unit Pentadbiran</option>
-                                <option value="Timbalan Pengarah">Timbalan Pengarah</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div id="portfolio-container" class="space-y-6">
-                        <!-- Portfolios injected via JS -->
-                    </div>
-
-                    <div class="mt-8 pt-6 border-t border-gray-200">
-                        <div id="add-more-container">
-                            <label class="block text-base font-bold text-gray-800 mb-3">15. Adakah anda ingin menambah SATU LAGI projek/aktiviti/portfolio?</label>
-                            <div class="flex flex-col sm:flex-row gap-4 mb-6">
-                                <button type="button" id="add-portfolio-btn" class="flex-1 border-2 border-dashed border-blue-300 bg-blue-50 rounded-lg p-4 text-center text-blue-600 hover:bg-blue-100 hover:border-blue-500 transition-colors font-medium">
-                                    <i class="fas fa-plus-circle mr-2"></i> YA, Tambah Portfolio Lagi
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <button type="submit" id="submit-btn" class="w-full bg-slate-800 text-white font-bold rounded-lg px-4 py-4 hover:bg-slate-900 shadow-md transition-colors flex justify-center items-center">
-                            <i class="fas fa-paper-plane mr-2"></i> Simpan / Hantar Maklumat
-                        </button>
-                    </div>
-                </form>
-            </div>
-
-            <!-- SECTION: MY PORTFOLIOS (Edit/Delete) -->
-            <div id="mydata-section" class="hidden w-full mx-auto">
-                <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-                    <div class="bg-emerald-50 px-6 py-5 border-b border-emerald-100 flex items-center gap-3">
-                        <div class="bg-emerald-500 text-white p-2 rounded-lg"><i class="fas fa-list-check"></i></div>
-                        <div>
-                            <h2 class="text-lg font-bold text-emerald-800">Senarai Portfolio Anda</h2>
-                            <p class="text-sm text-emerald-600">Anda hanya boleh melihat dan mengubah suai rekod yang dihantar oleh akaun anda.</p>
-                        </div>
-                    </div>
-                    <div class="p-6 overflow-x-auto">
-                        <table class="w-full text-left border-collapse min-w-[600px]">
-                            <thead>
-                                <tr class="bg-slate-50 border-b border-slate-200 text-sm text-slate-600">
-                                    <th class="p-3 font-semibold">Nama Portfolio</th>
-                                    <th class="p-3 font-semibold">Kekerapan</th>
-                                    <th class="p-3 font-semibold">Jam/Minggu</th>
-                                    <th class="p-3 font-semibold text-center">Tindakan</th>
-                                </tr>
-                            </thead>
-                            <tbody id="my-portfolios-table" class="text-sm text-slate-700 divide-y divide-slate-100">
-                                <!-- Populated by JS -->
-                            </tbody>
-                        </table>
-                        <div id="mydata-empty" class="hidden text-center py-8 text-slate-400 font-medium">
-                            <i class="fas fa-folder-open text-3xl mb-2"></i><br>Anda belum memasukkan sebarang data.
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SECTION: DASHBOARD -->
-            <div id="dashboard-section" class="hidden space-y-6">
-                <!-- Dashboard Filters -->
-                <div class="flex flex-col sm:flex-row justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-slate-100">
-                    <h2 class="text-xl font-bold text-slate-800"><i class="fas fa-chart-line text-blue-500 mr-2"></i> Papan Pemuka Analisis</h2>
-                    <div class="mt-4 sm:mt-0 flex items-center gap-3">
-                        <label class="text-sm font-semibold text-slate-700">Saring Unit:</label>
-                        <select id="filter-unit" class="rounded-md border border-gray-300 px-3 py-1.5 bg-gray-50 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                            <option value="">-- Semua Unit --</option>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">3. Nama Unit <span class="text-red-500">*</span></label>
+                        <select id="unit" required class="w-full rounded-md border border-gray-300 px-4 py-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="">-- Sila Pilih Unit Anda --</option>
                             <option value="Unit Survelan Klinikal">Unit Survelan Klinikal</option>
                             <option value="Unit Pengurusan Risiko (Pesakit)">Unit Pengurusan Risiko (Pesakit)</option>
                             <option value="Unit Pengurusan Risiko (Pekerjaan)">Unit Pengurusan Risiko (Pekerjaan)</option>
@@ -218,769 +224,1303 @@
                         </select>
                     </div>
                 </div>
-
-                <!-- KPI Metrics -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="bg-white rounded-lg p-6 shadow-sm border-l-4 border-blue-500">
-                        <span class="text-sm font-bold text-slate-500 mb-1 block">Jumlah Jam Bekerja (Seminggu)</span>
-                        <span class="text-3xl font-black text-slate-800" id="kpi-total-hours">0</span>
-                    </div>
-                    <div class="bg-white rounded-lg p-6 shadow-sm border-l-4 border-red-500">
-                        <span class="text-sm font-bold text-slate-500 mb-1 block">Portfolio Beban Tinggi</span>
-                        <span class="text-3xl font-black text-slate-800" id="kpi-high-burden">0</span>
-                    </div>
-                    <div class="bg-white rounded-lg p-6 shadow-sm border-l-4 border-orange-500 relative">
-                        <span class="text-sm font-bold text-slate-500 mb-1 block">Indeks Beban / Kapasiti Staf (%)</span>
-                        <span class="text-3xl font-black text-slate-800" id="kpi-workload-index">0%</span>
-                        <div class="absolute bottom-2 right-4 text-xs font-medium text-slate-400">100% = Had Optimum</div>
-                    </div>
-                </div>
-
-                <!-- Charts Row 1 -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="bg-white rounded-lg shadow-sm border border-slate-100 p-4 h-80">
-                        <h3 class="text-sm font-bold text-slate-700 text-center mb-2">Top 10 Portfolio Paling Membebankan (Jam)</h3>
-                        <div id="chart_top10_portfolio" class="w-full h-full flex justify-center items-center"><div class="loader"></div></div>
-                    </div>
-                    <div class="bg-white rounded-lg shadow-sm border border-slate-100 p-4 h-80">
-                        <h3 class="text-sm font-bold text-slate-700 text-center mb-2">Top 5 Unit Paling Sibuk</h3>
-                        <div id="chart_top5_unit" class="w-full h-full flex justify-center items-center"><div class="loader"></div></div>
-                    </div>
-                    <div class="bg-white rounded-lg shadow-sm border border-slate-100 p-4 h-80">
-                        <h3 class="text-sm font-bold text-slate-700 text-center mb-2">Top 5 Staf Beban Tertinggi</h3>
-                        <div id="chart_top5_staff" class="w-full h-full flex justify-center items-center"><div class="loader"></div></div>
-                    </div>
-                </div>
-
-                <!-- Charts Row 2 -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="bg-white rounded-lg shadow-sm border border-slate-100 p-4 h-80">
-                        <h3 class="text-sm font-bold text-slate-700 mb-2">Kekerapan Pelaksanaan Projek</h3>
-                        <div id="chart_frequency" class="w-full h-full flex justify-center items-center"><div class="loader"></div></div>
-                    </div>
-                    <div class="bg-white rounded-lg shadow-sm border border-slate-100 p-4 h-80">
-                        <h3 class="text-sm font-bold text-slate-700 mb-2">Trend Bulan Paling Sibuk</h3>
-                        <div id="chart_peak_months" class="w-full h-full flex justify-center items-center"><div class="loader"></div></div>
-                    </div>
-                </div>
-
-                <!-- Charts Row 3 (New Actionable Tables) -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="bg-white rounded-lg shadow-sm border border-slate-100 p-4 w-full overflow-x-auto">
-                        <h3 class="text-sm font-bold text-slate-700 mb-2 text-red-600"><i class="fas fa-exclamation-circle mr-1"></i> Portfolio Beban Tinggi & Jam/Minggu</h3>
-                        <div id="table_beban_tinggi" class="w-full min-h-[150px] flex justify-center items-center">
-                            <div class="loader"></div>
+                <div id="portfolio-container" class="space-y-6"></div>
+                <div class="mt-8 pt-6 border-t border-gray-200">
+                    <div id="add-more-container">
+                        <label class="block text-base font-bold text-gray-800 mb-3">15. Adakah anda ingin menambah SATU LAGI projek/aktiviti/portfolio?</label>
+                        <div class="flex flex-col sm:flex-row gap-4 mb-6">
+                            <button type="button" id="add-portfolio-btn"
+                                class="flex-1 border-2 border-dashed border-blue-300 bg-blue-50 rounded-lg p-4 text-center text-blue-600 hover:bg-blue-100 hover:border-blue-500 transition-colors font-medium">
+                                <i class="fas fa-plus-circle mr-2"></i> YA, Tambah Portfolio Lagi
+                            </button>
                         </div>
                     </div>
-                    <div class="bg-white rounded-lg shadow-sm border border-slate-100 p-4 w-full overflow-x-auto">
-                        <h3 class="text-sm font-bold text-slate-700 mb-2 text-orange-600"><i class="fas fa-exchange-alt mr-1"></i> Cadangan Serah Tugas Ke Agensi Lain</h3>
-                        <div id="table_serah_tugas" class="w-full min-h-[150px] flex justify-center items-center">
-                            <div class="loader"></div>
-                        </div>
+                    <button type="submit" id="submit-btn"
+                        class="w-full bg-slate-800 text-white font-bold rounded-lg px-4 py-4 hover:bg-slate-900 shadow-md transition-colors flex justify-center items-center">
+                        <i class="fas fa-paper-plane mr-2"></i> Simpan / Hantar Maklumat
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div id="mydata-section" class="hidden w-full mx-auto">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="bg-emerald-50 px-6 py-5 border-b border-emerald-100 flex items-center gap-3">
+                    <div class="bg-emerald-500 text-white p-2 rounded-lg"><i class="fas fa-list-check"></i></div>
+                    <div>
+                        <h2 class="text-lg font-bold text-emerald-800">Senarai Portfolio Anda</h2>
+                        <p class="text-sm text-emerald-600">Anda hanya boleh melihat dan mengubah suai rekod yang dihantar oleh akaun anda.</p>
                     </div>
                 </div>
-
-                <!-- Data Table & CSV Export -->
-                <div class="bg-white rounded-lg shadow-sm border border-slate-100 p-4 w-full overflow-x-auto">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-base font-bold text-slate-700">Senarai Lengkap Data</h3>
-                        <button onclick="downloadCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-md text-sm font-semibold transition-colors flex items-center shadow-sm">
-                            <i class="fas fa-file-csv mr-2"></i> Muat Turun CSV
-                        </button>
-                    </div>
-                    <div id="table_div" class="w-full min-h-[200px] flex justify-center items-center">
-                        <div class="loader text-blue-500 mx-auto"></div>
+                <div class="p-6 overflow-x-auto">
+                    <table class="w-full text-left border-collapse min-w-[600px]">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-sm text-slate-600">
+                                <th class="p-3 font-semibold">Nama Portfolio</th>
+                                <th class="p-3 font-semibold">Kekerapan</th>
+                                <th class="p-3 font-semibold">Jam/Minggu</th>
+                                <th class="p-3 font-semibold text-center">Tindakan</th>
+                            </tr>
+                        </thead>
+                        <tbody id="my-portfolios-table" class="text-sm text-slate-700 divide-y divide-slate-100"></tbody>
+                    </table>
+                    <div id="mydata-empty" class="hidden text-center py-10 text-slate-400 font-medium">
+                        <i class="fas fa-folder-open text-3xl mb-2 block"></i>Anda belum memasukkan sebarang data.
                     </div>
                 </div>
             </div>
         </div>
+
+        <div id="dashboard-section" class="hidden space-y-5">
+
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white px-6 py-4 rounded-xl shadow-sm border border-slate-100">
+                <div>
+                    <h2 class="text-xl font-extrabold text-slate-800 tracking-tight">
+                        <i class="fas fa-chart-line text-blue-500 mr-2"></i>Papan Pemuka Analisis
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-0.5" id="dash-last-updated">Memuatkan data…</p>
+                </div>
+                <div class="flex items-center gap-3 flex-wrap">
+                    <div class="flex items-center gap-2">
+                        <label class="text-xs font-bold text-slate-500">Saring:</label>
+                        <select id="filter-unit" class="rounded-lg border border-slate-200 px-3 py-1.5 bg-slate-50 text-sm font-medium focus:ring-2 focus:ring-blue-400 outline-none">
+                            <option value="">Semua Unit</option>
+                            <option value="Unit Survelan Klinikal">Unit Survelan Klinikal</option>
+                            <option value="Unit Pengurusan Risiko (Pesakit)">Unit Pengurusan Risiko (Pesakit)</option>
+                            <option value="Unit Pengurusan Risiko (Pekerjaan)">Unit Pengurusan Risiko (Pekerjaan)</option>
+                            <option value="Unit Kawalan Infeksi">Unit Kawalan Infeksi</option>
+                            <option value="Unit Pentadbiran">Unit Pentadbiran</option>
+                            <option value="Timbalan Pengarah">Timbalan Pengarah</option>
+                        </select>
+                    </div>
+                    <button onclick="downloadCSV()"
+                        class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 shadow-sm">
+                        <i class="fas fa-download"></i><span class="hidden sm:inline">Muat Turun CSV</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                <div class="bg-white rounded-xl border border-slate-100 p-6 dash-card relative overflow-hidden">
+                    <div class="absolute inset-0 bg-blue-500/4 pointer-events-none rounded-xl"></div>
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-clock text-blue-600 text-xl"></i>
+                        </div>
+                        <span class="badge badge-blue" id="kpi-hours-badge">0 Portfolio</span>
+                    </div>
+                    <p class="text-xs font-semibold text-slate-400 mb-1 tracking-wide">Jumlah Jam / Minggu</p>
+                    <p class="text-4xl font-black text-slate-800 leading-none" id="kpi-total-hours">0</p>
+                    <p class="text-xs text-slate-400 mt-2">Agregat keseluruhan aktiviti aktif</p>
+                    <div class="pbar-track"><div class="pbar-fill bg-blue-500" id="kpi-hours-bar" style="width:0%"></div></div>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-100 p-6 dash-card relative overflow-hidden">
+                    <div class="absolute inset-0 bg-red-500/4 pointer-events-none rounded-xl"></div>
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-fire-alt text-red-500 text-xl"></i>
+                        </div>
+                        <span class="badge badge-red" id="kpi-burden-badge">0% daripada total</span>
+                    </div>
+                    <p class="text-xs font-semibold text-slate-400 mb-1 tracking-wide">Portfolio Beban Tinggi</p>
+                    <p class="text-4xl font-black text-slate-800 leading-none" id="kpi-high-burden">0</p>
+                    <p class="text-xs text-slate-400 mt-2">Ditanda sebagai "Beban Tinggi"</p>
+                    <div class="pbar-track"><div class="pbar-fill bg-red-500" id="kpi-burden-bar" style="width:0%"></div></div>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-100 p-6 dash-card relative overflow-hidden">
+                    <div class="absolute inset-0 bg-amber-500/4 pointer-events-none rounded-xl"></div>
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-gauge-high text-amber-500 text-xl"></i>
+                        </div>
+                        <span class="badge badge-amber" id="kpi-index-badge">0 Staf</span>
+                    </div>
+                    <p class="text-xs font-semibold text-slate-400 mb-1 tracking-wide">Indeks Beban Kerja</p>
+                    <p class="text-4xl font-black leading-none" id="kpi-workload-index">0%</p>
+                    <p class="text-xs text-slate-400 mt-2">100% = had kapasiti optimum (40 jam/staf)</p>
+                    <div class="pbar-track"><div class="pbar-fill bg-amber-500" id="kpi-index-bar" style="width:0%"></div></div>
+                </div>
+            </div>
+
+            <!-- Charts Top Row -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                <div class="lg:col-span-2 bg-white rounded-xl border border-slate-100 p-5 dash-card">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-bold text-slate-700 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span>Top 10 Portfolio — Beban Tertinggi
+                        </h3>
+                        <span class="text-xs text-slate-400">Jam / Minggu</span>
+                    </div>
+                    <div class="relative" style="height:320px">
+                        <canvas id="canvas_top10"></canvas>
+                        <div id="empty_top10" class="hidden absolute inset-0 flex items-center justify-center">
+                            <p class="text-slate-300 text-sm"><i class="fas fa-chart-bar mr-2"></i>Tiada rekod</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl border border-slate-100 p-5 dash-card">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-bold text-slate-700 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-purple-500 inline-block"></span>Taburan Beban Unit
+                        </h3>
+                        <span class="text-xs text-slate-400">Jam / Minggu</span>
+                    </div>
+                    <div class="relative" style="height:280px">
+                        <canvas id="canvas_unit_donut"></canvas>
+                        <div id="empty_unit_donut" class="hidden absolute inset-0 flex items-center justify-center">
+                            <p class="text-slate-300 text-sm">Tiada rekod</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Middle Row -->
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-5">
+                <div class="lg:col-span-3 bg-white rounded-xl border border-slate-100 p-5 dash-card">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-bold text-slate-700 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-orange-500 inline-block"></span>Trend Bulan Paling Sibuk
+                        </h3>
+                        <span class="text-xs text-slate-400">Bilangan Aktiviti</span>
+                    </div>
+                    <div class="relative" style="height:220px">
+                        <canvas id="canvas_peak_months"></canvas>
+                        <div id="empty_peak_months" class="hidden absolute inset-0 flex items-center justify-center">
+                            <p class="text-slate-300 text-sm">Tiada rekod</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="lg:col-span-2 bg-white rounded-xl border border-slate-100 p-5 dash-card">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-bold text-slate-700 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-green-500 inline-block"></span>Kekerapan Aktiviti
+                        </h3>
+                    </div>
+                    <div class="relative" style="height:220px">
+                        <canvas id="canvas_frequency"></canvas>
+                        <div id="empty_frequency" class="hidden absolute inset-0 flex items-center justify-center">
+                            <p class="text-slate-300 text-sm">Tiada rekod</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top 5 Staff Chart -->
+            <div class="bg-white rounded-xl border border-slate-100 p-5 dash-card">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-bold text-slate-700 flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span>Top 5 Staf — Beban Tertinggi
+                    </h3>
+                    <span class="text-xs text-slate-400">Jam / Minggu (agregat)</span>
+                </div>
+                <div class="relative" style="height:200px">
+                    <canvas id="canvas_top5_staff"></canvas>
+                    <div id="empty_top5_staff" class="hidden absolute inset-0 flex items-center justify-center">
+                        <p class="text-slate-300 text-sm">Tiada rekod</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- UPGRADED TABLES: Portfolio Beban Tinggi & Cadangan Serah Tugas -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+                <!-- 1. Portfolio Beban Tinggi Table (Searchable & Paginated) -->
+                <div class="bg-white rounded-xl border border-slate-100 overflow-hidden dash-card flex flex-col justify-between">
+                    <div>
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-3.5 border-b border-red-100 bg-red-50/80">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0 text-red-600">
+                                    <i class="fas fa-exclamation-triangle text-sm"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-bold text-red-700">Portfolio Beban Tinggi</h3>
+                                    <p class="text-xs text-red-400" id="beban-tinggi-count">0 rekod</p>
+                                </div>
+                            </div>
+                            <div class="relative w-full sm:w-48">
+                                <i class="fas fa-search absolute left-2.5 top-2.5 text-red-300 text-xs"></i>
+                                <input type="text" id="search-beban-tinggi" placeholder="Cari portfolio / staf..."
+                                    class="w-full pl-7 pr-2.5 py-1 text-xs rounded-lg border border-red-200 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 placeholder-slate-400 outline-none focus:ring-1 focus:ring-red-400">
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto min-h-[240px]">
+                            <table class="w-full text-left">
+                                <thead>
+                                    <tr class="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wide border-b border-slate-100">
+                                        <th class="px-4 py-2.5">Portfolio</th>
+                                        <th class="px-4 py-2.5">Staf (Unit)</th>
+                                        <th class="px-4 py-2.5 text-right">Jam/Mgu</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-beban-tinggi" class="divide-y divide-slate-100 text-xs text-slate-700"></tbody>
+                            </table>
+                            <div id="beban-empty" class="hidden text-center py-10 text-slate-400 text-xs">
+                                <i class="fas fa-check-circle text-green-400 text-2xl mb-1 block"></i>Tiada portfolio beban tinggi ditemui
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Beban Tinggi Pagination Bar -->
+                    <div class="flex items-center justify-between px-4 py-2.5 border-t border-slate-100 bg-slate-50/50 text-xs">
+                        <span class="text-slate-400 font-medium" id="beban-page-info">—</span>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="changeBebanPage(-1)" id="beban-prev" class="px-2.5 py-1 rounded-md bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition font-medium" disabled>
+                                <i class="fas fa-chevron-left text-[10px]"></i>
+                            </button>
+                            <button onclick="changeBebanPage(1)" id="beban-next" class="px-2.5 py-1 rounded-md bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition font-medium" disabled>
+                                <i class="fas fa-chevron-right text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Cadangan Serah Tugas Table (Grouped/Combined, Searchable & Paginated) -->
+                <div class="bg-white rounded-xl border border-slate-100 overflow-hidden dash-card flex flex-col justify-between">
+                    <div>
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-3.5 border-b border-amber-100 bg-amber-50/80">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0 text-amber-600">
+                                    <i class="fas fa-right-left text-sm"></i>
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <h3 class="text-sm font-bold text-amber-700">Cadangan Serah Tugas</h3>
+                                        <span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-200/80 text-amber-800" title="Portfolio dengan nama sama digabungkan">Tergabung</span>
+                                    </div>
+                                    <p class="text-xs text-amber-500" id="serah-tugas-count">0 projek</p>
+                                </div>
+                            </div>
+                            <div class="relative w-full sm:w-48">
+                                <i class="fas fa-search absolute left-2.5 top-2.5 text-amber-400 text-xs"></i>
+                                <input type="text" id="search-serah-tugas" placeholder="Cari portfolio / cadangan..."
+                                    class="w-full pl-7 pr-2.5 py-1 text-xs rounded-lg border border-amber-200 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 placeholder-slate-400 outline-none focus:ring-1 focus:ring-amber-400">
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto min-h-[240px]">
+                            <table class="w-full text-left">
+                                <thead>
+                                    <tr class="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wide border-b border-slate-100">
+                                        <th class="px-4 py-2.5 min-w-[140px]">Portfolio / Projek</th>
+                                        <th class="px-4 py-2.5 min-w-[120px]">Unit Asal</th>
+                                        <th class="px-4 py-2.5 min-w-[150px]">Cadangan Serah Kepada</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-serah-tugas" class="divide-y divide-slate-100 text-xs text-slate-700"></tbody>
+                            </table>
+                            <div id="serah-empty" class="hidden text-center py-10 text-slate-400 text-xs">
+                                <i class="fas fa-check-circle text-green-400 text-2xl mb-1 block"></i>Tiada cadangan penyerahan tugas ditemui
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Cadangan Serah Tugas Pagination Bar -->
+                    <div class="flex items-center justify-between px-4 py-2.5 border-t border-slate-100 bg-slate-50/50 text-xs">
+                        <span class="text-slate-400 font-medium" id="serah-page-info">—</span>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="changeSerahPage(-1)" id="serah-prev" class="px-2.5 py-1 rounded-md bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition font-medium" disabled>
+                                <i class="fas fa-chevron-left text-[10px]"></i>
+                            </button>
+                            <button onclick="changeSerahPage(1)" id="serah-next" class="px-2.5 py-1 rounded-md bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition font-medium" disabled>
+                                <i class="fas fa-chevron-right text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Complete Dataset Table -->
+            <div class="bg-white rounded-xl border border-slate-100 overflow-hidden dash-card">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 px-5 py-4 border-b border-slate-100">
+                    <h3 class="text-sm font-bold text-slate-700">
+                        <i class="fas fa-table text-slate-400 mr-2"></i>Senarai Lengkap Data
+                    </h3>
+                    <input type="text" id="table-search" placeholder="Cari nama staf, unit atau portfolio…"
+                        class="w-full sm:w-64 rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-400 outline-none">
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left min-w-[720px]">
+                        <thead>
+                            <tr class="bg-slate-50 text-xs font-bold text-slate-500 uppercase tracking-wide border-b border-slate-200">
+                                <th class="px-4 py-3 w-8">#</th>
+                                <th class="px-4 py-3">Nama Staf</th>
+                                <th class="px-4 py-3">Unit</th>
+                                <th class="px-4 py-3">Portfolio</th>
+                                <th class="px-4 py-3">Kekerapan</th>
+                                <th class="px-4 py-3 text-center">Jam/Minggu</th>
+                                <th class="px-4 py-3 text-center">Beban</th>
+                            </tr>
+                        </thead>
+                        <tbody id="main-table-body" class="divide-y divide-slate-100 text-sm text-slate-700"></tbody>
+                    </table>
+                    <div id="main-table-empty" class="hidden text-center py-12 text-slate-400 text-sm">
+                        <i class="fas fa-inbox text-3xl mb-2 block opacity-50"></i>Tiada rekod ditemui
+                    </div>
+                </div>
+                <div class="flex flex-col sm:flex-row items-center justify-between px-5 py-3 border-t border-slate-100 gap-3">
+                    <span class="text-xs text-slate-400" id="table-page-info">—</span>
+                    <div class="flex items-center gap-2">
+                        <button onclick="changePage(-1)" id="table-prev"
+                            class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-semibold transition-colors" disabled>
+                            <i class="fas fa-chevron-left mr-1"></i>Sebelum
+                        </button>
+                        <button onclick="changePage(1)" id="table-next"
+                            class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-semibold transition-colors" disabled>
+                            Seterusnya<i class="fas fa-chevron-right ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
     </div>
+</div>
 
-    <script src="https://www.gstatic.com/charts/loader.js"></script>
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, serverTimestamp, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword,
+             createUserWithEmailAndPassword,
+             onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query,
+             serverTimestamp, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Your Exact Firebase Configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyDS_zr-h8GZlBGRqBdsu-yAlg_h_suwX8Q",
-            authDomain: "analysis-beban-kerja.firebaseapp.com",
-            projectId: "analysis-beban-kerja",
-            storageBucket: "analysis-beban-kerja.firebasestorage.app",
-            messagingSenderId: "1077211482462",
-            appId: "1:1077211482462:web:f26e4663732cbc2c16e7cf",
-            measurementId: "G-2891WGDXJX"
-        };
-        
-        let app, auth, db;
-        let globalData = [];
-        let formCount = 0;
-        let isChartsLoaded = false;
-        let currentUser = null;
-        let editingDocId = null;
+    const firebaseConfig = {
+        apiKey:            "AIzaSyDS_zr-h8GZlBGRqBdsu-yAlg_h_suwX8Q",
+        authDomain:        "analysis-beban-kerja.firebaseapp.com",
+        projectId:         "analysis-beban-kerja",
+        storageBucket:     "analysis-beban-kerja.firebasestorage.app",
+        messagingSenderId: "1077211482462",
+        appId:             "1:1077211482462:web:f26e4663732cbc2c16e7cf",
+        measurementId:     "G-2891WGDXJX"
+    };
 
-        function showMessage(msg, isError = false) {
-            const div = document.createElement('div');
-            div.className = `fixed bottom-4 right-4 p-4 rounded-lg shadow-lg text-white z-50 transition-all duration-500 transform translate-y-0 opacity-100 ${isError ? 'bg-red-600' : 'bg-emerald-600'}`;
-            div.innerHTML = `<i class="fas ${isError ? 'fa-exclamation-triangle' : 'fa-check-circle'} mr-2"></i> ${msg}`;
-            document.body.appendChild(div);
-            setTimeout(() => {
-                div.style.opacity = '0';
-                div.style.transform = 'translateY(20px)';
-                setTimeout(() => div.remove(), 500);
-            }, 4000);
-        }
+    const _s = "B3b4nK3rj4#2025@";
+    const _h = "1fd734369b226419815ee54bacb982a621467f7fc991d430e6a4dbf2be6baad6";
 
-        async function initApp() {
-            app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
+    async function _digest(input) {
+        const encoded = new TextEncoder().encode(_s + input);
+        const buf     = await crypto.subtle.digest("SHA-256", encoded);
+        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,"0")).join("");
+    }
 
-            // Load Google Charts
-            google.charts.load('current', {'packages':['corechart', 'table']});
-            google.charts.setOnLoadCallback(() => {
-                isChartsLoaded = true;
-                if (globalData.length > 0) processData(globalData, document.getElementById('filter-unit')?.value);
-            });
+    let app, auth, db;
+    let globalData          = [];
+    let formCount           = 0;
+    let currentUser         = null;
+    let editingDocId        = null;
+    let isDashboardUnlocked = false;
+    let chartInstances      = {};
 
-            // Authentication Listeners
-            const btnLogin = document.getElementById('btn-login');
-            if (btnLogin) btnLogin.addEventListener('click', handleLogin);
-            
-            const btnRegister = document.getElementById('btn-register');
-            if (btnRegister) btnRegister.addEventListener('click', handleRegister);
-            
-            const btnLogout = document.getElementById('btn-logout');
-            if (btnLogout) btnLogout.addEventListener('click', () => signOut(auth));
+    // Main Master Table State
+    let tableAllData      = [];
+    let tableFilteredData = [];
+    let tableCurrentPage  = 1;
+    const PAGE_SIZE       = 10;
 
-            // Form & UI Listeners
-            const btnAdd = document.getElementById('add-portfolio-btn');
-            if (btnAdd) btnAdd.addEventListener('click', () => generatePortfolioForm());
-            
-            const frmSubmit = document.getElementById('beban-form');
-            if (frmSubmit) frmSubmit.addEventListener('submit', handleFormSubmit);
-            
-            const selFilter = document.getElementById('filter-unit');
-            if (selFilter) selFilter.addEventListener('change', (e) => {
-                if (isChartsLoaded) processData(globalData, e.target.value);
-            });
-            
-            const btnCancel = document.getElementById('btn-cancel-edit');
-            if (btnCancel) btnCancel.addEventListener('click', cancelEditMode);
+    // Sub-tables State (Beban Tinggi & Cadangan Serah)
+    const SUB_PAGE_SIZE = 5;
 
-            // Listen for Login/Logout state changes
-            onAuthStateChanged(auth, (user) => {
-                const authSec = document.getElementById('auth-section');
-                const appSec = document.getElementById('app-sections');
-                const navTabs = document.getElementById('app-tabs');
-                const userNav = document.getElementById('user-nav');
+    let bebanAllData      = [];
+    let bebanFilteredData = [];
+    let bebanCurrentPage  = 1;
 
-                if (user) {
-                    currentUser = user;
-                    document.getElementById('email').value = user.email;
-                    document.getElementById('user-display-email').innerText = user.email;
-                    
-                    authSec.classList.add('hidden');
-                    appSec.classList.remove('hidden');
-                    navTabs.classList.remove('hidden');
-                    userNav.classList.remove('hidden');
-                    userNav.classList.add('flex');
-                    
-                    startDatabaseListener();
-                    
-                    if (!editingDocId) {
-                        document.getElementById('portfolio-container').innerHTML = '';
-                        formCount = 0;
-                        generatePortfolioForm();
-                    }
-                    switchTab('form');
-                } else {
-                    currentUser = null;
-                    authSec.classList.remove('hidden');
-                    appSec.classList.add('hidden');
-                    navTabs.classList.add('hidden');
-                    userNav.classList.add('hidden');
-                    userNav.classList.remove('flex');
-                }
-            });
-        }
+    let serahAllData      = [];
+    let serahFilteredData = [];
+    let serahCurrentPage  = 1;
 
-        // --- AUTHENTICATION FUNCTIONS ---
-        async function handleLogin() {
-            const e = document.getElementById('auth-email').value;
-            const p = document.getElementById('auth-password').value;
-            if(!e || !p) return showMessage("Sila masukkan emel dan kata laluan.", true);
-            try {
-                const btn = document.getElementById('btn-login');
-                btn.innerText = "Sila tunggu...";
-                await signInWithEmailAndPassword(auth, e, p);
-                showMessage("Berjaya log masuk!");
-                btn.innerText = "Log Masuk";
-            } catch (err) {
-                showMessage("Gagal log masuk. Periksa emel/kata laluan.", true);
-                document.getElementById('btn-login').innerText = "Log Masuk";
+    const PAL = ['#3b82f6','#8b5cf6','#10b981','#f59e0b','#ef4444',
+                 '#06b6d4','#ec4899','#6366f1','#84cc16','#f97316'];
+
+    function showMessage(msg, isError = false) {
+        const d = document.createElement('div');
+        d.className = `fixed bottom-4 right-4 p-4 rounded-xl shadow-xl text-white z-[60] flex items-center gap-3 text-sm font-semibold ${isError ? 'bg-red-600' : 'bg-emerald-600'}`;
+        d.innerHTML = `<i class="fas ${isError ? 'fa-exclamation-circle' : 'fa-check-circle'} text-lg"></i>${msg}`;
+        document.body.appendChild(d);
+        setTimeout(() => {
+            d.style.transition = 'all .4s';
+            d.style.opacity    = '0';
+            d.style.transform  = 'translateY(12px)';
+            setTimeout(() => d.remove(), 400);
+        }, 3500);
+    }
+
+    function destroyChart(key) {
+        if (chartInstances[key]) { chartInstances[key].destroy(); delete chartInstances[key]; }
+    }
+
+    function setEmpty(id, show) {
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle('hidden', !show);
+    }
+
+    function showPasskeyModal() {
+        const m = document.getElementById('passkey-modal');
+        m.classList.remove('hidden'); m.classList.add('flex');
+        document.getElementById('passkey-input').value = '';
+        document.getElementById('passkey-error').classList.add('hidden');
+        document.getElementById('passkey-input').classList.remove('border-red-400');
+        setTimeout(() => document.getElementById('passkey-input').focus(), 120);
+    }
+
+    window.closePasskeyModal = function() {
+        const m = document.getElementById('passkey-modal');
+        m.classList.add('hidden'); m.classList.remove('flex');
+    };
+
+    window.verifyPasskey = async function() {
+        const val    = document.getElementById('passkey-input').value;
+        const digest = await _digest(val);
+        if (digest === _h) {
+            isDashboardUnlocked = true;
+            window.closePasskeyModal();
+            const badge = document.getElementById('dash-lock-badge');
+            if (badge) {
+                badge.innerHTML  = '<i class="fas fa-unlock text-xs"></i>';
+                badge.className  = 'ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold bg-green-100 text-green-600';
             }
+            _switchTabCore('dashboard');
+            if (globalData.length > 0) processData(globalData, document.getElementById('filter-unit').value);
+        } else {
+            document.getElementById('passkey-error').classList.remove('hidden');
+            const inp = document.getElementById('passkey-input');
+            inp.value = '';
+            inp.classList.add('border-red-400', 'shake');
+            setTimeout(() => inp.classList.remove('shake'), 400);
+            inp.focus();
         }
+    };
 
-        async function handleRegister() {
-            const e = document.getElementById('auth-email').value;
-            const p = document.getElementById('auth-password').value;
-            if(!e || p.length < 6) return showMessage("Emel diperlukan dan kata laluan min 6 aksara.", true);
-            try {
-                const btn = document.getElementById('btn-register');
-                btn.innerText = "Mendaftar...";
-                await createUserWithEmailAndPassword(auth, e, p);
-                showMessage("Akaun berjaya didaftarkan!");
-                btn.innerText = "Daftar Akaun Baru";
-            } catch (err) {
-                showMessage("Emel ini mungkin telah digunakan.", true);
-                document.getElementById('btn-register').innerText = "Daftar Akaun Baru";
-            }
-        }
+    function _switchTabCore(name) {
+        ['form', 'mydata', 'dashboard'].forEach(t => {
+            document.getElementById(`${t}-section`).classList.add('hidden');
+            const tab = document.getElementById(`tab-${t}`);
+            tab.classList.remove('border-blue-500', 'text-blue-600');
+            tab.classList.add('border-transparent', 'text-gray-500');
+        });
+        document.getElementById(`${name}-section`).classList.remove('hidden');
+        const act = document.getElementById(`tab-${name}`);
+        act.classList.add('border-blue-500', 'text-blue-600');
+        act.classList.remove('border-transparent', 'text-gray-500');
+    }
 
-        // --- DATABASE FUNCTIONS ---
-        function startDatabaseListener() {
-            // Using your standard Firestore collection
-            const q = query(collection(db, "portfolios")); 
-            onSnapshot(q, (snapshot) => {
-                globalData = [];
-                snapshot.forEach((doc) => {
-                    globalData.push({ id: doc.id, ...doc.data() });
-                });
-                
-                globalData.sort((a, b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
+    window.switchTab = function(name) {
+        if (name === 'dashboard' && !isDashboardUnlocked) { showPasskeyModal(); return; }
+        _switchTabCore(name);
+    };
 
-                if (isChartsLoaded) {
-                    processData(globalData, document.getElementById('filter-unit').value);
-                }
-                renderMyPortfolios();
-            });
-        }
+    // Custom confirm dialog (replaces browser confirm)
+    function customConfirm(title, message) {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('confirm-modal');
+            const titleEl = document.getElementById('confirm-title');
+            const msgEl = document.getElementById('confirm-msg');
+            const okBtn = document.getElementById('confirm-btn-ok');
+            const cancelBtn = document.getElementById('confirm-btn-cancel');
 
-        function renderMyPortfolios() {
-            const tbody = document.getElementById('my-portfolios-table');
-            const emptyState = document.getElementById('mydata-empty');
-            if(!tbody) return;
-            
-            tbody.innerHTML = '';
-            
-            // Only show data matching current user
-            const myData = globalData.filter(d => d.uid === currentUser.uid);
+            titleEl.textContent = title;
+            msgEl.textContent = message;
 
-            if (myData.length === 0) {
-                emptyState.classList.remove('hidden');
-            } else {
-                emptyState.classList.add('hidden');
-                myData.forEach(d => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td class="p-3 border-b border-slate-100 font-medium text-slate-800">${d.nama_projek || '-'}</td>
-                        <td class="p-3 border-b border-slate-100">${d.kekerapan || '-'}</td>
-                        <td class="p-3 border-b border-slate-100">${d.jam_seminggu || 0}</td>
-                        <td class="p-3 border-b border-slate-100 text-center whitespace-nowrap">
-                            <button onclick="editMyData('${d.id}')" class="text-blue-500 hover:text-blue-700 mx-2" title="Edit"><i class="fas fa-edit"></i></button>
-                            <button onclick="deleteMyData('${d.id}')" class="text-red-500 hover:text-red-700 mx-2" title="Padam"><i class="fas fa-trash-alt"></i></button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            }
-        }
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
 
-        window.deleteMyData = async function(docId) {
-            if(confirm("Adakah anda pasti mahu memadam portfolio ini? Tindakan ini tidak boleh diundur.")) {
-                try {
-                    await deleteDoc(doc(db, "portfolios", docId));
-                    showMessage("Data berjaya dipadam.");
-                } catch (err) {
-                    showMessage("Ralat memadam data.", true);
-                }
-            }
-        }
-
-        window.editMyData = function(docId) {
-            const record = globalData.find(d => d.id === docId);
-            if (!record) return;
-
-            editingDocId = docId;
-            
-            // Populate generic user info
-            document.getElementById('nama').value = record.nama || '';
-            document.getElementById('unit').value = record.unit || '';
-
-            // Render just 1 form filled with this data
-            document.getElementById('portfolio-container').innerHTML = '';
-            formCount = 0;
-            generatePortfolioForm(record); 
-
-            // Alter UI for edit mode
-            document.getElementById('add-more-container').classList.add('hidden');
-            document.getElementById('btn-cancel-edit').classList.remove('hidden');
-            document.getElementById('form-title').innerText = "Mengedit Portfolio";
-            document.getElementById('form-subtitle').innerText = "Kemas kini maklumat portfolio di bawah.";
-            document.getElementById('submit-btn').innerHTML = '<i class="fas fa-save mr-2"></i> Kemas Kini Maklumat';
-            
-            switchTab('form');
-        }
-
-        function cancelEditMode() {
-            editingDocId = null;
-            document.getElementById('beban-form').reset();
-            document.getElementById('email').value = currentUser.email; 
-            document.getElementById('portfolio-container').innerHTML = '';
-            formCount = 0;
-            generatePortfolioForm();
-
-            document.getElementById('add-more-container').classList.remove('hidden');
-            document.getElementById('btn-cancel-edit').classList.add('hidden');
-            document.getElementById('form-title').innerText = "Maklumat Staf & Unit";
-            document.getElementById('form-subtitle').innerText = "Lengkapkan maklumat, kemudian senaraikan portfolio anda.";
-            document.getElementById('submit-btn').innerHTML = '<i class="fas fa-paper-plane mr-2"></i> Simpan / Hantar Maklumat';
-        }
-
-        function generatePortfolioForm(data = null) {
-            formCount++;
-            const container = document.getElementById('portfolio-container');
-            const div = document.createElement('div');
-            div.className = 'portfolio-section p-6 border border-blue-200 rounded-xl bg-white shadow-sm relative';
-            
-            const checksTanggungjawab = ['Merancang', 'Memimpin', 'Menyelaras', 'Memantau', 'Menganalisa', 'Menilai', 'Membuat keputusan', 'Mendokumentasi', 'Mengumpul data', 'Mengemaskini data'];
-            const checksImpak = ['Cawangan', 'Bahagian', 'Negeri', 'Negara', 'Luar Negara'];
-            const checksBulan = ['Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember', 'Tiada'];
-
-            div.innerHTML = `
-                <div class="flex justify-between items-center mb-5 border-b border-gray-200 pb-3">
-                    <h3 class="text-lg font-bold text-blue-800">Projek / Aktiviti / Portfolio ${editingDocId ? '' : `#${formCount}`}</h3>
-                    ${(formCount > 1 && !editingDocId) ? `<button type="button" class="text-red-500 hover:text-red-700 text-sm font-semibold px-2 py-1 bg-red-50 rounded" onclick="this.closest('.portfolio-section').remove()"><i class="fas fa-trash-alt mr-1"></i>Padam</button>` : ''}
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">4. Nama Projek / Aktiviti / Portfolio <span class="text-red-500">*</span></label>
-                        <input type="text" required class="portfolio-nama w-full rounded-md border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" value="${data?.nama_projek || ''}">
-                    </div>
-
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">5. Tanggungjawab</label>
-                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 text-sm bg-slate-50 p-4 rounded-md border border-gray-200">
-                            ${checksTanggungjawab.map(t => `<label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" value="${t}" class="portfolio-tanggungjawab rounded border-gray-300 text-blue-600" ${data?.tanggungjawab?.includes(t) ? 'checked' : ''}> <span class="text-gray-700">${t}</span></label>`).join('')}
-                        </div>
-                    </div>
-
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">6. Outcome / Impak</label>
-                        <div class="flex flex-wrap gap-4 text-sm bg-slate-50 p-4 rounded-md border border-gray-200">
-                            ${checksImpak.map(t => `<label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" value="${t}" class="portfolio-impak rounded border-gray-300 text-blue-600" ${data?.impak?.includes(t) ? 'checked' : ''}> <span class="text-gray-700">${t}</span></label>`).join('')}
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">7. Kekerapan <span class="text-red-500">*</span></label>
-                        <select required class="portfolio-kekerapan w-full rounded-md border border-gray-300 px-4 py-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
-                            <option value="">-- Sila Pilih --</option>
-                            ${['Harian', 'Mingguan', 'Bulanan', 'Dwitahunan', 'Tahunan', 'Bermusim'].map(v => `<option value="${v}" ${data?.kekerapan === v ? 'selected' : ''}>${v}</option>`).join('')}
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">9. Anggaran Jam Seminggu</label>
-                        <input type="number" min="0" step="0.5" class="portfolio-jam w-full rounded-md border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" value="${data?.jam_seminggu || ''}">
-                    </div>
-
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">8. Bulan Paling Sibuk</label>
-                        <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 text-sm bg-slate-50 p-4 rounded-md border border-gray-200">
-                            ${checksBulan.map(b => `<label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" value="${b}" class="portfolio-bulan rounded border-gray-300 text-orange-500" ${data?.bulan_sibuk?.includes(b) ? 'checked' : ''}> <span class="text-gray-700">${b}</span></label>`).join('')}
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">10. Jumlah Staf Yang Terlibat</label>
-                        <select class="portfolio-staf w-full rounded-md border border-gray-300 px-4 py-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
-                            <option value="">-- Pilih --</option>
-                            ${['1 orang', '2 orang', '3 orang', '4 orang', '5 orang atau lebih'].map(v => `<option value="${v}" ${data?.jumlah_staf === v ? 'selected' : ''}>${v}</option>`).join('')}
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">11. Beban tinggi?</label>
-                        <select class="portfolio-beban w-full rounded-md border border-gray-300 px-4 py-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
-                            <option value="">-- Pilih --</option>
-                            <option value="Ya" ${data?.beban_tinggi === 'Ya' ? 'selected' : ''}>Ya</option>
-                            <option value="Tidak" ${data?.beban_tinggi === 'Tidak' ? 'selected' : ''}>Tidak</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">12. Penglibatan Agensi lain?</label>
-                        <select class="portfolio-penglibatan w-full rounded-md border border-gray-300 px-4 py-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
-                            <option value="">-- Pilih --</option>
-                            <option value="Ya" ${data?.penglibatan_agensi === 'Ya' ? 'selected' : ''}>Ya</option>
-                            <option value="Tidak" ${data?.penglibatan_agensi === 'Tidak' ? 'selected' : ''}>Tidak</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">13. Diserahkan kepada Unit Lain?</label>
-                        <select class="portfolio-serah w-full rounded-md border border-gray-300 px-4 py-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none" onchange="const t = this.closest('.portfolio-section').querySelector('.q14-container'); if(this.value === 'Ya'){ t.classList.remove('hidden'); } else { t.classList.add('hidden'); }">
-                            <option value="">-- Pilih --</option>
-                            <option value="Ya" ${data?.serah_unit === 'Ya' ? 'selected' : ''}>Ya</option>
-                            <option value="Tidak" ${data?.serah_unit === 'Tidak' ? 'selected' : ''}>Tidak</option>
-                        </select>
-                    </div>
-
-                    <div class="md:col-span-2 q14-container ${data?.serah_unit === 'Ya' ? '' : 'hidden'}">
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">14. Jika Ya, cadangan serah kepada siapa?</label>
-                        <input type="text" class="portfolio-cadangan-serah w-full rounded-md border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" value="${data?.cadangan_serah || ''}">
-                    </div>
-                </div>
-            `;
-            container.appendChild(div);
-        }
-
-        async function handleFormSubmit(e) {
-            e.preventDefault();
-            if (!currentUser) return showMessage("Sila log masuk dahulu.", true);
-
-            const submitBtn = document.getElementById('submit-btn');
-            const originalText = submitBtn.innerHTML;
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Menyimpan...';
-
-            try {
-                const email = currentUser.email;
-                const uid = currentUser.uid; 
-                const nama = document.getElementById('nama').value;
-                const unit = document.getElementById('unit').value;
-                
-                const portfolios = document.querySelectorAll('.portfolio-section');
-                
-                if (editingDocId) {
-                    // Update single edited document
-                    const section = portfolios[0];
-                    const dataObj = {
-                        nama: nama,
-                        unit: unit,
-                        nama_projek: section.querySelector('.portfolio-nama').value,
-                        tanggungjawab: Array.from(section.querySelectorAll('.portfolio-tanggungjawab:checked')).map(cb => cb.value),
-                        impak: Array.from(section.querySelectorAll('.portfolio-impak:checked')).map(cb => cb.value),
-                        kekerapan: section.querySelector('.portfolio-kekerapan').value,
-                        bulan_sibuk: Array.from(section.querySelectorAll('.portfolio-bulan:checked')).map(cb => cb.value),
-                        jam_seminggu: parseFloat(section.querySelector('.portfolio-jam').value) || 0,
-                        jumlah_staf: section.querySelector('.portfolio-staf').value,
-                        beban_tinggi: section.querySelector('.portfolio-beban').value,
-                        penglibatan_agensi: section.querySelector('.portfolio-penglibatan').value,
-                        serah_unit: section.querySelector('.portfolio-serah').value,
-                        cadangan_serah: section.querySelector('.portfolio-cadangan-serah').value
-                    };
-                    await updateDoc(doc(db, "portfolios", editingDocId), dataObj);
-                    showMessage("Rekod berjaya dikemaskini!");
-                    cancelEditMode();
-                    switchTab('mydata');
-                } else {
-                    // Create new documents (one for each portfolio added)
-                    const batchPromises = [];
-                    portfolios.forEach((section) => {
-                        const dataObj = {
-                            uid: uid,
-                            email: email,
-                            nama: nama,
-                            unit: unit,
-                            nama_projek: section.querySelector('.portfolio-nama').value,
-                            tanggungjawab: Array.from(section.querySelectorAll('.portfolio-tanggungjawab:checked')).map(cb => cb.value),
-                            impak: Array.from(section.querySelectorAll('.portfolio-impak:checked')).map(cb => cb.value),
-                            kekerapan: section.querySelector('.portfolio-kekerapan').value,
-                            bulan_sibuk: Array.from(section.querySelectorAll('.portfolio-bulan:checked')).map(cb => cb.value),
-                            jam_seminggu: parseFloat(section.querySelector('.portfolio-jam').value) || 0,
-                            jumlah_staf: section.querySelector('.portfolio-staf').value,
-                            beban_tinggi: section.querySelector('.portfolio-beban').value,
-                            penglibatan_agensi: section.querySelector('.portfolio-penglibatan').value,
-                            serah_unit: section.querySelector('.portfolio-serah').value,
-                            cadangan_serah: section.querySelector('.portfolio-cadangan-serah').value,
-                            timestamp: serverTimestamp()
-                        };
-                        batchPromises.push(addDoc(collection(db, "portfolios"), dataObj));
-                    });
-                    await Promise.all(batchPromises);
-                    showMessage("Maklumat berjaya direkodkan!");
-                    document.getElementById('beban-form').reset();
-                    document.getElementById('email').value = email;
-                    document.getElementById('portfolio-container').innerHTML = '';
-                    formCount = 0;
-                    generatePortfolioForm(); 
-                    switchTab('dashboard');
-                }
-            } catch (error) {
-                console.error("Error submitting:", error);
-                showMessage("Gagal menyimpan data.", true);
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalText;
-            }
-        }
-
-        window.switchTab = function(tabName) {
-            ['form', 'mydata', 'dashboard'].forEach(t => {
-                document.getElementById(`${t}-section`).classList.add('hidden');
-                document.getElementById(`tab-${t}`).classList.remove('border-blue-500', 'text-blue-600');
-                document.getElementById(`tab-${t}`).classList.add('border-transparent', 'text-gray-500');
-            });
-
-            document.getElementById(`${tabName}-section`).classList.remove('hidden');
-            document.getElementById(`tab-${tabName}`).classList.add('border-blue-500', 'text-blue-600');
-            document.getElementById(`tab-${tabName}`).classList.remove('border-transparent', 'text-gray-500');
-        };
-
-        // --- DASHBOARD FUNCTIONS ---
-        const processData = (allData, filterVal = '') => {
-            const data = filterVal === '' ? allData : allData.filter(d => d.unit === filterVal);
-            
-            let totalHours = 0;
-            let highBurdenCount = 0;
-            const staffNames = new Set();
-            
-            data.forEach(d => {
-                totalHours += (d.jam_seminggu || 0);
-                if (d.beban_tinggi === 'Ya') highBurdenCount++;
-                if (d.nama) staffNames.add(d.nama.toLowerCase().trim());
-            });
-            
-            document.getElementById('kpi-total-hours').innerText = totalHours.toFixed(1);
-            document.getElementById('kpi-high-burden').innerText = highBurdenCount;
-            
-            // Workload calculation
-            const staffCount = staffNames.size > 0 ? staffNames.size : 1; 
-            const maxCapacity = staffCount * 40; 
-            const workloadIndex = (totalHours / maxCapacity) * 100;
-            
-            const workloadEl = document.getElementById('kpi-workload-index');
-            workloadEl.innerText = isNaN(workloadIndex) ? '0%' : workloadIndex.toFixed(1) + '%';
-            workloadEl.className = workloadIndex > 100 ? "text-3xl font-black text-red-600" : "text-3xl font-black text-slate-800";
-
-            drawChartTop10Portfolio(data);
-            drawChartTop5Unit(allData); 
-            drawChartTop5Staff(data);
-            drawChartFrequency(data);
-            drawChartPeakMonths(data);
-            
-            // Draw the two new Actionable Tables
-            drawTableBebanTinggi(data);
-            drawTableSerahTugas(data);
-            
-            // Draw Main Database Table
-            drawTable(data);
-        };
-        
-        function drawChartTop10Portfolio(data) {
-            const el = document.getElementById('chart_top10_portfolio');
-            if (data.length === 0) return el.innerHTML = '<p class="text-gray-400">Tiada Rekod</p>';
-            const map = {};
-            data.forEach(d => {
-                let label = d.nama_projek || 'Tiada Nama';
-                label = label.length > 25 ? label.substring(0, 25) + '...' : label;
-                map[label] = (map[label] || 0) + (d.jam_seminggu || 0);
-            });
-            const sorted = Object.entries(map).sort((a,b) => b[1] - a[1]).slice(0, 10);
-            const chartData = [['Portfolio', 'Jam/Minggu', { role: 'style' }]];
-            sorted.forEach((item, index) => chartData.push([item[0], item[1], index < 3 ? '#ef4444' : '#3b82f6']));
-            new google.visualization.BarChart(el).draw(google.visualization.arrayToDataTable(chartData), { legend: 'none', chartArea: { width: '55%', height: '80%' }, hAxis: { minValue: 0 } });
-        }
-
-        function drawChartTop5Unit(data) {
-            const el = document.getElementById('chart_top5_unit');
-            if (data.length === 0) return el.innerHTML = '<p class="text-gray-400">Tiada Rekod</p>';
-            const map = {};
-            data.forEach(d => map[d.unit || 'Lain-lain'] = (map[d.unit || 'Lain-lain'] || 0) + (d.jam_seminggu || 0));
-            const sorted = Object.entries(map).sort((a,b) => b[1] - a[1]).slice(0, 5);
-            const chartData = [['Unit', 'Jam']];
-            sorted.forEach(item => chartData.push(item));
-            new google.visualization.ColumnChart(el).draw(google.visualization.arrayToDataTable(chartData), { legend: 'none', colors: ['#8b5cf6'], chartArea: { width: '80%', height: '70%' } });
-        }
-
-        function drawChartTop5Staff(data) {
-            const el = document.getElementById('chart_top5_staff');
-            if (data.length === 0) return el.innerHTML = '<p class="text-gray-400">Tiada Rekod</p>';
-            const map = {};
-            data.forEach(d => map[d.nama || 'Rahsia'] = (map[d.nama || 'Rahsia'] || 0) + (d.jam_seminggu || 0));
-            const sorted = Object.entries(map).sort((a,b) => b[1] - a[1]).slice(0, 5);
-            const chartData = [['Staf', 'Jam']];
-            sorted.forEach(item => chartData.push(item));
-            new google.visualization.ColumnChart(el).draw(google.visualization.arrayToDataTable(chartData), { legend: 'none', colors: ['#f59e0b'], chartArea: { width: '80%', height: '70%' } });
-        }
-
-        function drawChartFrequency(data) {
-            const el = document.getElementById('chart_frequency');
-            if (data.length === 0) return el.innerHTML = '<p class="text-gray-400">Tiada Rekod</p>';
-            const map = {};
-            data.forEach(d => { if (d.kekerapan) map[d.kekerapan] = (map[d.kekerapan] || 0) + 1; });
-            const chartData = [['Kekerapan', 'Jumlah']];
-            Object.keys(map).forEach(k => chartData.push([k, map[k]]));
-            new google.visualization.PieChart(el).draw(google.visualization.arrayToDataTable(chartData), { pieHole: 0.4, colors: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'], chartArea: { width: '90%', height: '80%' } });
-        }
-
-        function drawChartPeakMonths(data) {
-            const el = document.getElementById('chart_peak_months');
-            if (data.length === 0) return el.innerHTML = '<p class="text-gray-400">Tiada Rekod</p>';
-            const map = {};
-            data.forEach(d => { if (d.bulan_sibuk) d.bulan_sibuk.forEach(b => { if (b !== 'Tiada') map[b] = (map[b] || 0) + 1; }); });
-            const chartData = [['Bulan', 'Kekerapan']];
-            ['Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'].forEach(m => chartData.push([m.substring(0,3), map[m] || 0]));
-            new google.visualization.LineChart(el).draw(google.visualization.arrayToDataTable(chartData), { legend: 'none', colors: ['#f97316'], chartArea: { width: '85%', height: '70%' }, curveType: 'function' });
-        }
-
-        // --- NEW ACTIONABLE TABLES ---
-        function drawTableBebanTinggi(data) {
-            const el = document.getElementById('table_beban_tinggi');
-            if (!el) return;
-            const filteredData = data.filter(d => d.beban_tinggi === 'Ya');
-            
-            if (filteredData.length === 0) {
-                el.innerHTML = '<p class="text-gray-400 text-center py-4">Tiada rekod beban tinggi bagi unit ini</p>';
-                return;
-            }
-            
-            const gData = new google.visualization.DataTable();
-            gData.addColumn('string', 'Portfolio'); 
-            gData.addColumn('string', 'Staf (Unit)'); 
-            gData.addColumn('number', 'Jam');
-            
-            filteredData.forEach(d => {
-                gData.addRow([d.nama_projek || '-', `${d.nama || '-'} (${d.unit || '-'})`, d.jam_seminggu || 0]);
-            });
-            
-            new google.visualization.Table(el).draw(gData, { showRowNumber: true, width: '100%', page: 'enable', pageSize: 5, cssClassNames: { headerRow: 'bg-red-50 text-red-700 font-bold', tableRow: 'text-sm' } });
-        }
-
-        function drawTableSerahTugas(data) {
-            const el = document.getElementById('table_serah_tugas');
-            if (!el) return;
-            const filteredData = data.filter(d => d.serah_unit === 'Ya');
-            
-            if (filteredData.length === 0) {
-                el.innerHTML = '<p class="text-gray-400 text-center py-4">Tiada cadangan penyerahan tugas bagi unit ini</p>';
-                return;
-            }
-            
-            const gData = new google.visualization.DataTable();
-            gData.addColumn('string', 'Portfolio'); 
-            gData.addColumn('string', 'Unit Semasa'); 
-            gData.addColumn('string', 'Serah Kepada');
-            
-            filteredData.forEach(d => {
-                gData.addRow([d.nama_projek || '-', d.unit || '-', d.cadangan_serah || 'Tiada Maklumat']);
-            });
-            
-            new google.visualization.Table(el).draw(gData, { showRowNumber: true, width: '100%', page: 'enable', pageSize: 5, cssClassNames: { headerRow: 'bg-orange-50 text-orange-700 font-bold', tableRow: 'text-sm' } });
-        }
-
-        function drawTable(data) {
-            const el = document.getElementById('table_div');
-            if (data.length === 0) return el.innerHTML = '<p class="text-gray-400 text-center py-4">Tiada Rekod Semasa</p>';
-            const gData = new google.visualization.DataTable();
-            gData.addColumn('string', 'Nama Staf'); gData.addColumn('string', 'Unit'); gData.addColumn('string', 'Portfolio'); gData.addColumn('number', 'Jam'); gData.addColumn('string', 'B. Tinggi');
-            data.forEach(d => gData.addRow([d.nama || '-', d.unit || '-', d.nama_projek || '-', d.jam_seminggu || 0, d.beban_tinggi || '-']));
-            new google.visualization.Table(el).draw(gData, { showRowNumber: true, width: '100%', page: 'enable', pageSize: 10, cssClassNames: { headerRow: 'bg-slate-100 font-bold', tableRow: 'text-sm' } });
-        }
-
-        // --- CSV EXPORT FUNCTION ---
-        window.downloadCSV = function() {
-            if (!globalData || globalData.length === 0) {
-                showMessage("Tiada data untuk dimuat turun.", true);
-                return;
-            }
-
-            const filterVal = document.getElementById('filter-unit')?.value || '';
-            const dataToExport = filterVal === '' ? globalData : globalData.filter(d => d.unit === filterVal);
-
-            if (dataToExport.length === 0) {
-                showMessage("Tiada data ditemui untuk saringan unit ini.", true);
-                return;
-            }
-
-            // CSV Headers
-            const headers = [
-                "Nama", "Email", "Unit", "Nama Portfolio", "Tanggungjawab",
-                "Impak", "Kekerapan", "Jam Seminggu", "Bulan Sibuk",
-                "Jumlah Staf", "Beban Tinggi", "Penglibatan Agensi",
-                "Serah Unit", "Cadangan Serah", "Tarikh Hantar"
-            ];
-
-            let csvContent = headers.join(",") + "\n";
-
-            // Helper to prevent commas inside cells from breaking columns
-            const escapeCSV = (str) => {
-                if (str === null || str === undefined || str === '') return '""';
-                const s = String(str).replace(/"/g, '""'); 
-                return `"${s}"`; 
+            const cleanup = () => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                okBtn.removeEventListener('click', onOk);
+                cancelBtn.removeEventListener('click', onCancel);
             };
 
-            dataToExport.forEach(d => {
-                const row = [
-                    escapeCSV(d.nama),
-                    escapeCSV(d.email),
-                    escapeCSV(d.unit),
-                    escapeCSV(d.nama_projek),
-                    escapeCSV(Array.isArray(d.tanggungjawab) ? d.tanggungjawab.join(" ; ") : d.tanggungjawab),
-                    escapeCSV(Array.isArray(d.impak) ? d.impak.join(" ; ") : d.impak),
-                    escapeCSV(d.kekerapan),
-                    escapeCSV(d.jam_seminggu),
-                    escapeCSV(Array.isArray(d.bulan_sibuk) ? d.bulan_sibuk.join(" ; ") : d.bulan_sibuk),
-                    escapeCSV(d.jumlah_staf),
-                    escapeCSV(d.beban_tinggi),
-                    escapeCSV(d.penglibatan_agensi),
-                    escapeCSV(d.serah_unit),
-                    escapeCSV(d.cadangan_serah),
-                    escapeCSV(d.timestamp ? new Date(d.timestamp.toMillis()).toLocaleDateString('ms-MY') : '')
-                ];
-                csvContent += row.join(",") + "\n";
+            const onOk = () => { cleanup(); resolve(true); };
+            const onCancel = () => { cleanup(); resolve(false); };
+
+            okBtn.addEventListener('click', onOk);
+            cancelBtn.addEventListener('click', onCancel);
+        });
+    }
+
+    async function initApp() {
+        app  = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db   = getFirestore(app);
+
+        Chart.defaults.font.family = "'Inter', sans-serif";
+        Chart.defaults.color       = '#64748b';
+        Chart.defaults.plugins.legend.labels.usePointStyle = true;
+        Chart.defaults.plugins.legend.labels.padding       = 14;
+
+        document.getElementById('btn-login').addEventListener('click', handleLogin);
+        document.getElementById('btn-register').addEventListener('click', handleRegister);
+        document.getElementById('btn-logout').addEventListener('click', () => signOut(auth));
+        document.getElementById('add-portfolio-btn').addEventListener('click', () => generatePortfolioForm());
+        document.getElementById('beban-form').addEventListener('submit', handleFormSubmit);
+        document.getElementById('btn-cancel-edit').addEventListener('click', cancelEditMode);
+
+        document.getElementById('filter-unit').addEventListener('change', e => {
+            processData(globalData, e.target.value);
+        });
+
+        // Search in Main Table
+        document.getElementById('table-search').addEventListener('input', e => {
+            const q = e.target.value.toLowerCase();
+            tableFilteredData = tableAllData.filter(d =>
+                (d.nama        || '').toLowerCase().includes(q) ||
+                (d.nama_projek || '').toLowerCase().includes(q) ||
+                (d.unit        || '').toLowerCase().includes(q)
+            );
+            tableCurrentPage = 1;
+            renderTablePage();
+        });
+
+        // Search in Beban Tinggi Table
+        document.getElementById('search-beban-tinggi').addEventListener('input', e => {
+            const q = e.target.value.toLowerCase();
+            bebanFilteredData = bebanAllData.filter(d =>
+                (d.nama_projek || '').toLowerCase().includes(q) ||
+                (d.nama        || '').toLowerCase().includes(q) ||
+                (d.unit        || '').toLowerCase().includes(q)
+            );
+            bebanCurrentPage = 1;
+            renderBebanTablePage();
+        });
+
+        // Search in Cadangan Serah Tugas Table
+        document.getElementById('search-serah-tugas').addEventListener('input', e => {
+            const q = e.target.value.toLowerCase();
+            serahFilteredData = serahAllData.filter(g =>
+                g.nama_projek.toLowerCase().includes(q) ||
+                Array.from(g.units).some(u => u.toLowerCase().includes(q)) ||
+                Array.from(g.cadangan).some(c => c.toLowerCase().includes(q))
+            );
+            serahCurrentPage = 1;
+            renderSerahTablePage();
+        });
+
+        onAuthStateChanged(auth, user => {
+            const authSec = document.getElementById('auth-section');
+            const appSec  = document.getElementById('app-sections');
+            const navTabs = document.getElementById('app-tabs');
+            const userNav = document.getElementById('user-nav');
+
+            if (user) {
+                currentUser = user;
+                document.getElementById('email').value = user.email;
+                document.getElementById('user-display-email').innerText = user.email;
+                authSec.classList.add('hidden');
+                appSec.classList.remove('hidden');
+                navTabs.classList.remove('hidden');
+                userNav.classList.remove('hidden'); userNav.classList.add('flex');
+                startDatabaseListener();
+                if (!editingDocId) {
+                    document.getElementById('portfolio-container').innerHTML = '';
+                    formCount = 0;
+                    generatePortfolioForm();
+                }
+                _switchTabCore('form');
+            } else {
+                currentUser         = null;
+                isDashboardUnlocked = false;
+                authSec.classList.remove('hidden');
+                appSec.classList.add('hidden');
+                navTabs.classList.add('hidden');
+                userNav.classList.add('hidden'); userNav.classList.remove('flex');
+            }
+        });
+    }
+
+    async function handleLogin() {
+        const e = document.getElementById('auth-email').value;
+        const p = document.getElementById('auth-password').value;
+        if (!e || !p) return showMessage("Sila masukkan emel dan kata laluan.", true);
+        const btn = document.getElementById('btn-login');
+        btn.textContent = "Sila tunggu…";
+        try { await signInWithEmailAndPassword(auth, e, p); showMessage("Berjaya log masuk!"); }
+        catch { showMessage("Gagal log masuk. Periksa emel/kata laluan.", true); }
+        finally { btn.textContent = "Log Masuk"; }
+    }
+
+    async function handleRegister() {
+        const e = document.getElementById('auth-email').value;
+        const p = document.getElementById('auth-password').value;
+        if (!e || p.length < 6) return showMessage("Emel diperlukan dan kata laluan min 6 aksara.", true);
+        const btn = document.getElementById('btn-register');
+        btn.textContent = "Mendaftar…";
+        try { await createUserWithEmailAndPassword(auth, e, p); showMessage("Akaun berjaya didaftarkan!"); }
+        catch { showMessage("Emel ini mungkin telah digunakan.", true); }
+        finally { btn.textContent = "Daftar Akaun Baru"; }
+    }
+
+    function startDatabaseListener() {
+        onSnapshot(query(collection(db, "portfolios")), snap => {
+            globalData = [];
+            snap.forEach(d => globalData.push({ id: d.id, ...d.data() }));
+            globalData.sort((a, b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
+
+            const upd = document.getElementById('dash-last-updated');
+            if (upd) upd.innerText = `Dikemas kini: ${new Date().toLocaleTimeString('ms-MY')}`;
+
+            renderMyPortfolios();
+
+            const dashVisible = !document.getElementById('dashboard-section').classList.contains('hidden');
+            if (dashVisible && isDashboardUnlocked) {
+                processData(globalData, document.getElementById('filter-unit').value);
+            }
+        });
+    }
+
+    function renderMyPortfolios() {
+        const tbody = document.getElementById('my-portfolios-table');
+        const empty = document.getElementById('mydata-empty');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+        const mine = globalData.filter(d => d.uid === currentUser?.uid);
+        if (!mine.length) { empty.classList.remove('hidden'); return; }
+        empty.classList.add('hidden');
+        mine.forEach(d => {
+            const tr = document.createElement('tr');
+            tr.className = 'data-tr';
+            tr.innerHTML = `
+                <td class="p-3 border-b border-slate-100 font-medium text-slate-800">${d.nama_projek || '-'}</td>
+                <td class="p-3 border-b border-slate-100">${d.kekerapan || '-'}</td>
+                <td class="p-3 border-b border-slate-100 font-bold text-blue-600">${d.jam_seminggu || 0}</td>
+                <td class="p-3 border-b border-slate-100 text-center whitespace-nowrap">
+                    <button onclick="editMyData('${d.id}')" class="text-blue-500 hover:text-blue-700 mx-2 text-sm" title="Edit"><i class="fas fa-edit"></i></button>
+                    <button onclick="deleteMyData('${d.id}')" class="text-red-400 hover:text-red-600 mx-2 text-sm" title="Padam"><i class="fas fa-trash-alt"></i></button>
+                </td>`;
+            tbody.appendChild(tr);
+        });
+    }
+
+    window.deleteMyData = async function(docId) {
+        const confirmed = await customConfirm("Padam Portfolio", "Adakah anda pasti mahu memadam portfolio ini? Tindakan ini tidak boleh diundur.");
+        if (!confirmed) return;
+        try { await deleteDoc(doc(db, "portfolios", docId)); showMessage("Data berjaya dipadam."); }
+        catch { showMessage("Ralat memadam data.", true); }
+    };
+
+    window.editMyData = function(docId) {
+        const rec = globalData.find(d => d.id === docId);
+        if (!rec) return;
+        editingDocId = docId;
+        document.getElementById('nama').value = rec.nama || '';
+        document.getElementById('unit').value = rec.unit || '';
+        document.getElementById('portfolio-container').innerHTML = '';
+        formCount = 0;
+        generatePortfolioForm(rec);
+        document.getElementById('add-more-container').classList.add('hidden');
+        document.getElementById('btn-cancel-edit').classList.remove('hidden');
+        document.getElementById('form-title').innerText    = "Mengedit Portfolio";
+        document.getElementById('form-subtitle').innerText = "Kemas kini maklumat portfolio di bawah.";
+        document.getElementById('submit-btn').innerHTML    = '<i class="fas fa-save mr-2"></i> Kemas Kini Maklumat';
+        _switchTabCore('form');
+    };
+
+    function cancelEditMode() {
+        editingDocId = null;
+        document.getElementById('beban-form').reset();
+        document.getElementById('email').value = currentUser?.email || '';
+        document.getElementById('portfolio-container').innerHTML = '';
+        formCount = 0;
+        generatePortfolioForm();
+        document.getElementById('add-more-container').classList.remove('hidden');
+        document.getElementById('btn-cancel-edit').classList.add('hidden');
+        document.getElementById('form-title').innerText    = "Maklumat Staf & Unit";
+        document.getElementById('form-subtitle').innerText = "Lengkapkan maklumat, kemudian senaraikan portfolio anda.";
+        document.getElementById('submit-btn').innerHTML    = '<i class="fas fa-paper-plane mr-2"></i> Simpan / Hantar Maklumat';
+    }
+
+    function generatePortfolioForm(data = null) {
+        formCount++;
+        const container = document.getElementById('portfolio-container');
+        const div       = document.createElement('div');
+        div.className   = 'portfolio-section p-6 border border-blue-200 rounded-xl bg-white shadow-sm relative';
+
+        const cTJ    = ['Merancang','Memimpin','Menyelaras','Memantau','Menganalisa','Menilai','Membuat keputusan','Mendokumentasi','Mengumpul data','Mengemaskini data'];
+        const cImp   = ['Cawangan','Bahagian','Negeri','Negara','Luar Negara'];
+        const cBulan = ['Januari','Februari','Mac','April','Mei','Jun','Julai','Ogos','September','Oktober','November','Disember','Tiada'];
+
+        div.innerHTML = `
+        <div class="flex justify-between items-center mb-5 border-b border-gray-200 pb-3">
+            <h3 class="text-lg font-bold text-blue-800">Projek / Aktiviti / Portfolio ${editingDocId ? '' : `#${formCount}`}</h3>
+            ${(formCount > 1 && !editingDocId) ? `<button type="button" class="text-red-500 hover:text-red-700 text-sm font-semibold px-2 py-1 bg-red-50 rounded" onclick="this.closest('.portfolio-section').remove()"><i class="fas fa-trash-alt mr-1"></i>Padam</button>` : ''}
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="md:col-span-2">
+                <label class="block text-sm font-semibold text-gray-700 mb-1">4. Nama Projek / Aktiviti / Portfolio <span class="text-red-500">*</span></label>
+                <input type="text" required class="portfolio-nama w-full rounded-md border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" value="${data?.nama_projek || ''}">
+            </div>
+            <div class="md:col-span-2">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">5. Tanggungjawab</label>
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 text-sm bg-slate-50 p-4 rounded-md border border-gray-200">
+                    ${cTJ.map(t => `<label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" value="${t}" class="portfolio-tanggungjawab rounded border-gray-300 text-blue-600" ${data?.tanggungjawab?.includes(t) ? 'checked' : ''}> <span class="text-gray-700">${t}</span></label>`).join('')}
+                </div>
+            </div>
+            <div class="md:col-span-2">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">6. Outcome / Impak</label>
+                <div class="flex flex-wrap gap-4 text-sm bg-slate-50 p-4 rounded-md border border-gray-200">
+                    ${cImp.map(t => `<label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" value="${t}" class="portfolio-impak rounded border-gray-300 text-blue-600" ${data?.impak?.includes(t) ? 'checked' : ''}> <span class="text-gray-700">${t}</span></label>`).join('')}
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">7. Kekerapan <span class="text-red-500">*</span></label>
+                <select required class="portfolio-kekerapan w-full rounded-md border border-gray-300 px-4 py-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="">-- Sila Pilih --</option>
+                    ${['Harian','Mingguan','Bulanan','Dwitahunan','Tahunan','Bermusim'].map(v => `<option value="${v}" ${data?.kekerapan === v ? 'selected' : ''}>${v}</option>`).join('')}
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">9. Anggaran Jam Seminggu</label>
+                <input type="number" min="0" step="0.5" class="portfolio-jam w-full rounded-md border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" value="${data?.jam_seminggu || ''}">
+            </div>
+            <div class="md:col-span-2">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">8. Bulan Paling Sibuk</label>
+                <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 text-sm bg-slate-50 p-4 rounded-md border border-gray-200">
+                    ${cBulan.map(b => `<label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" value="${b}" class="portfolio-bulan rounded border-gray-300 text-orange-500" ${data?.bulan_sibuk?.includes(b) ? 'checked' : ''}> <span class="text-gray-700">${b}</span></label>`).join('')}
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">10. Jumlah Staf Yang Terlibat</label>
+                <select class="portfolio-staf w-full rounded-md border border-gray-300 px-4 py-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="">-- Pilih --</option>
+                    ${['1 orang','2 orang','3 orang','4 orang','5 orang atau lebih'].map(v => `<option value="${v}" ${data?.jumlah_staf === v ? 'selected' : ''}>${v}</option>`).join('')}
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">11. Beban tinggi?</label>
+                <select class="portfolio-beban w-full rounded-md border border-gray-300 px-4 py-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="">-- Pilih --</option>
+                    <option value="Ya" ${data?.beban_tinggi === 'Ya' ? 'selected' : ''}>Ya</option>
+                    <option value="Tidak" ${data?.beban_tinggi === 'Tidak' ? 'selected' : ''}>Tidak</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">12. Penglibatan Agensi lain?</label>
+                <select class="portfolio-penglibatan w-full rounded-md border border-gray-300 px-4 py-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="">-- Pilih --</option>
+                    <option value="Ya" ${data?.penglibatan_agensi === 'Ya' ? 'selected' : ''}>Ya</option>
+                    <option value="Tidak" ${data?.penglibatan_agensi === 'Tidak' ? 'selected' : ''}>Tidak</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">13. Diserahkan kepada Unit Lain?</label>
+                <select class="portfolio-serah w-full rounded-md border border-gray-300 px-4 py-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                    onchange="this.closest('.portfolio-section').querySelector('.q14-container').classList.toggle('hidden', this.value !== 'Ya')">
+                    <option value="">-- Pilih --</option>
+                    <option value="Ya" ${data?.serah_unit === 'Ya' ? 'selected' : ''}>Ya</option>
+                    <option value="Tidak" ${data?.serah_unit === 'Tidak' ? 'selected' : ''}>Tidak</option>
+                </select>
+            </div>
+            <div class="md:col-span-2 q14-container ${data?.serah_unit === 'Ya' ? '' : 'hidden'}">
+                <label class="block text-sm font-semibold text-gray-700 mb-1">14. Jika Ya, cadangan serah kepada siapa?</label>
+                <input type="text" class="portfolio-cadangan-serah w-full rounded-md border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" value="${data?.cadangan_serah || ''}">
+            </div>
+        </div>`;
+        container.appendChild(div);
+    }
+
+    async function handleFormSubmit(e) {
+        e.preventDefault();
+        if (!currentUser) return showMessage("Sila log masuk dahulu.", true);
+        const btn  = document.getElementById('submit-btn');
+        const orig = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Menyimpan…';
+
+        try {
+            const { email, uid } = currentUser;
+            const nama     = document.getElementById('nama').value;
+            const unit     = document.getElementById('unit').value;
+            const sections = document.querySelectorAll('.portfolio-section');
+
+            const collect = s => ({
+                nama, unit,
+                nama_projek:        s.querySelector('.portfolio-nama').value,
+                tanggungjawab:      Array.from(s.querySelectorAll('.portfolio-tanggungjawab:checked')).map(c => c.value),
+                impak:              Array.from(s.querySelectorAll('.portfolio-impak:checked')).map(c => c.value),
+                kekerapan:          s.querySelector('.portfolio-kekerapan').value,
+                bulan_sibuk:        Array.from(s.querySelectorAll('.portfolio-bulan:checked')).map(c => c.value),
+                jam_seminggu:       parseFloat(s.querySelector('.portfolio-jam').value) || 0,
+                jumlah_staf:        s.querySelector('.portfolio-staf').value,
+                beban_tinggi:       s.querySelector('.portfolio-beban').value,
+                penglibatan_agensi: s.querySelector('.portfolio-penglibatan').value,
+                serah_unit:         s.querySelector('.portfolio-serah').value,
+                cadangan_serah:     s.querySelector('.portfolio-cadangan-serah').value,
             });
 
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            
-            const dateStr = new Date().toISOString().split('T')[0];
-            const filterName = filterVal === '' ? 'Semua_Unit' : filterVal.replace(/\s+/g, '_');
-            
-            link.setAttribute("href", url);
-            link.setAttribute("download", `Analisis_Beban_${filterName}_${dateStr}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        };
-
-// --- FONT SIZE CHANGER FUNCTION ---
-        let currentFontSize = 100; 
-        window.changeFontSize = function(action) {
-            if (action === -1 && currentFontSize > 80) currentFontSize -= 10;
-            if (action === 1 && currentFontSize < 130) currentFontSize += 10;
-            if (action === 0) currentFontSize = 100; 
-            
-            document.documentElement.style.fontSize = currentFontSize + '%';
-        };
-
-// --- DARK MODE FUNCTION ---
-        window.toggleDarkMode = function() {
-            const body = document.body;
-            const btnIcon = document.querySelector('#btn-dark i');
-            const btn = document.getElementById('btn-dark');
-            
-            body.classList.toggle('dark-mode');
-            
-            // Swap icon and button colors depending on the theme
-            if (body.classList.contains('dark-mode')) {
-                btnIcon.classList.replace('fa-moon', 'fa-sun');
-                btn.classList.replace('text-yellow-400', 'text-yellow-200');
-                btn.classList.replace('bg-slate-800', 'bg-slate-600');
+            if (editingDocId) {
+                await updateDoc(doc(db, "portfolios", editingDocId), collect(sections[0]));
+                showMessage("Rekod berjaya dikemaskini!");
+                cancelEditMode();
+                _switchTabCore('mydata');
             } else {
-                btnIcon.classList.replace('fa-sun', 'fa-moon');
-                btn.classList.replace('text-yellow-200', 'text-yellow-400');
-                btn.classList.replace('bg-slate-600', 'bg-slate-800');
+                await Promise.all(Array.from(sections).map(s =>
+                    addDoc(collection(db, "portfolios"), { ...collect(s), uid, email, timestamp: serverTimestamp() })
+                ));
+                showMessage("Maklumat berjaya direkodkan!");
+                document.getElementById('beban-form').reset();
+                document.getElementById('email').value = email;
+                document.getElementById('portfolio-container').innerHTML = '';
+                formCount = 0;
+                generatePortfolioForm();
+                _switchTabCore('mydata');
             }
-        };
+        } catch (err) {
+            console.error(err);
+            showMessage("Gagal menyimpan data.", true);
+        } finally {
+            btn.disabled  = false;
+            btn.innerHTML = orig;
+        }
+    }
+
+    function processData(allData, filterVal = '') {
+        const data = filterVal ? allData.filter(d => d.unit === filterVal) : allData;
+
+        let totalHours = 0, highBurden = 0;
+        const staffSet = new Set();
+        data.forEach(d => {
+            totalHours += (d.jam_seminggu || 0);
+            if (d.beban_tinggi === 'Ya') highBurden++;
+            if (d.nama) staffSet.add(d.nama.toLowerCase().trim());
+        });
+
+        const staffCount = staffSet.size || 1;
+        const maxCap     = staffCount * 40;
+        const wlPct      = (totalHours / maxCap) * 100;
+        const burdenPct  = data.length > 0 ? (highBurden / data.length) * 100 : 0;
+
+        document.getElementById('kpi-total-hours').innerText  = totalHours.toFixed(1);
+        document.getElementById('kpi-hours-badge').innerText  = `${data.length} Portfolio`;
+        document.getElementById('kpi-hours-bar').style.width  = Math.min(100, (totalHours / (maxCap || 1)) * 100) + '%';
+
+        document.getElementById('kpi-high-burden').innerText  = highBurden;
+        document.getElementById('kpi-burden-badge').innerText = `${burdenPct.toFixed(0)}% daripada total`;
+        document.getElementById('kpi-burden-bar').style.width = Math.min(100, burdenPct) + '%';
+
+        const wlEl = document.getElementById('kpi-workload-index');
+        wlEl.innerText  = isNaN(wlPct) ? '0%' : wlPct.toFixed(1) + '%';
+        wlEl.className  = wlPct > 100 ? 'text-4xl font-black leading-none text-red-600'
+                        : wlPct > 80  ? 'text-4xl font-black leading-none text-amber-500'
+                        :               'text-4xl font-black leading-none text-emerald-600';
+        document.getElementById('kpi-index-badge').innerText  = `${staffCount} Staf`;
+        const iBar = document.getElementById('kpi-index-bar');
+        iBar.style.width      = Math.min(100, wlPct) + '%';
+        iBar.style.background = wlPct > 100 ? '#ef4444' : wlPct > 80 ? '#f59e0b' : '#10b981';
+
+        drawTop10Chart(data);
+        drawUnitDonut(allData);
+        drawPeakMonths(data);
+        drawFrequency(data);
+        drawTop5Staff(data);
+        drawBebanTinggiTable(data);
+        drawSerahTugasTable(data);
+        drawMainTable(data);
+    }
+
+    function drawTop10Chart(data) {
+        destroyChart('top10');
+        const canvas = document.getElementById('canvas_top10');
+        if (!canvas) return;
+        const map = {};
+        data.forEach(d => {
+            const lbl = (d.nama_projek || 'Tiada Nama').substring(0, 36);
+            map[lbl]  = (map[lbl] || 0) + (d.jam_seminggu || 0);
+        });
+        const sorted = Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 10);
+        if (!sorted.length) { setEmpty('empty_top10', true); return; }
+        setEmpty('empty_top10', false);
+        const colors = sorted.map((_, i) =>
+            i === 0 ? 'rgba(239,68,68,.85)' :
+            i === 1 ? 'rgba(249,115,22,.85)' :
+            i === 2 ? 'rgba(245,158,11,.85)' :
+                      `rgba(59,130,246,${.85 - i * .05})`
+        );
+        chartInstances['top10'] = new Chart(canvas, {
+            type: 'bar',
+            data: { labels: sorted.map(i => i[0]), datasets: [{ data: sorted.map(i => i[1]), backgroundColor: colors, borderRadius: 5, borderSkipped: false }] },
+            options: {
+                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.parsed.x} jam/minggu` } } },
+                scales: {
+                    x: { grid: { color: 'rgba(0,0,0,.04)' }, ticks: { font: { size: 11 } }, title: { display: true, text: 'Jam / Minggu', font: { size: 10 } } },
+                    y: { grid: { display: false }, ticks: { font: { size: 10.5 } } }
+                }
+            }
+        });
+    }
+
+    function drawUnitDonut(data) {
+        destroyChart('unitDonut');
+        const canvas = document.getElementById('canvas_unit_donut');
+        if (!canvas) return;
+        const map = {};
+        data.forEach(d => map[d.unit || 'Lain-lain'] = (map[d.unit || 'Lain-lain'] || 0) + (d.jam_seminggu || 0));
+        const sorted = Object.entries(map).sort((a, b) => b[1] - a[1]);
+        if (!sorted.length) { setEmpty('empty_unit_donut', true); return; }
+        setEmpty('empty_unit_donut', false);
+        chartInstances['unitDonut'] = new Chart(canvas, {
+            type: 'doughnut',
+            data: { labels: sorted.map(i => i[0]), datasets: [{ data: sorted.map(i => i[1]), backgroundColor: PAL, borderWidth: 2, borderColor: '#fff', hoverBorderWidth: 3 }] },
+            options: {
+                responsive: true, maintainAspectRatio: false, cutout: '62%',
+                plugins: {
+                    legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 10, padding: 8 } },
+                    tooltip: { callbacks: { label: c => ` ${c.label}: ${c.parsed} jam` } }
+                }
+            }
+        });
+    }
+
+    function drawPeakMonths(data) {
+        destroyChart('peakMonths');
+        const canvas = document.getElementById('canvas_peak_months');
+        if (!canvas) return;
+        const months = ['Januari','Februari','Mac','April','Mei','Jun','Julai','Ogos','September','Oktober','November','Disember'];
+        const map    = {}; months.forEach(m => map[m] = 0);
+        data.forEach(d => { if (d.bulan_sibuk) d.bulan_sibuk.forEach(b => { if (b !== 'Tiada' && map[b] !== undefined) map[b]++; }); });
+        if (!data.length) { setEmpty('empty_peak_months', true); return; }
+        setEmpty('empty_peak_months', false);
+        chartInstances['peakMonths'] = new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels: months.map(m => m.substring(0, 3)),
+                datasets: [{
+                    data: months.map(m => map[m]),
+                    borderColor: '#f97316', backgroundColor: 'rgba(249,115,22,.08)',
+                    fill: true, tension: 0.4, borderWidth: 2.5,
+                    pointBackgroundColor: '#f97316', pointRadius: 4, pointHoverRadius: 6
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.parsed.y} aktiviti` } } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+                    y: { grid: { color: 'rgba(0,0,0,.04)' }, ticks: { precision: 0, font: { size: 11 } }, beginAtZero: true }
+                }
+            }
+        });
+    }
+
+    function drawFrequency(data) {
+        destroyChart('frequency');
+        const canvas = document.getElementById('canvas_frequency');
+        if (!canvas) return;
+        const map = {};
+        data.forEach(d => { if (d.kekerapan) map[d.kekerapan] = (map[d.kekerapan] || 0) + 1; });
+        const entries = Object.entries(map).sort((a, b) => b[1] - a[1]);
+        if (!entries.length) { setEmpty('empty_frequency', true); return; }
+        setEmpty('empty_frequency', false);
+        chartInstances['frequency'] = new Chart(canvas, {
+            type: 'doughnut',
+            data: {
+                labels: entries.map(e => e[0]),
+                datasets: [{ data: entries.map(e => e[1]), backgroundColor: ['#10b981','#3b82f6','#8b5cf6','#f59e0b','#ef4444','#06b6d4'], borderWidth: 2, borderColor: '#fff' }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false, cutout: '55%',
+                plugins: {
+                    legend: { position: 'bottom', labels: { font: { size: 10.5 }, boxWidth: 10, padding: 8 } },
+                    tooltip: { callbacks: { label: c => ` ${c.label}: ${c.parsed} aktiviti` } }
+                }
+            }
+        });
+    }
+
+    function drawTop5Staff(data) {
+        destroyChart('top5staff');
+        const canvas = document.getElementById('canvas_top5_staff');
+        if (!canvas) return;
+        const map = {};
+        data.forEach(d => map[d.nama || 'Rahsia'] = (map[d.nama || 'Rahsia'] || 0) + (d.jam_seminggu || 0));
+        const sorted = Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 5);
+        if (!sorted.length) { setEmpty('empty_top5_staff', true); return; }
+        setEmpty('empty_top5_staff', false);
+        chartInstances['top5staff'] = new Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels: sorted.map(i => i[0]),
+                datasets: [{ data: sorted.map(i => i[1]), backgroundColor: sorted.map((_, i) => `rgba(245,158,11,${1 - i * .15})`), borderRadius: 6, borderSkipped: false }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.parsed.y} jam/minggu` } } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+                    y: { grid: { color: 'rgba(0,0,0,.04)' }, ticks: { font: { size: 11 } }, beginAtZero: true, title: { display: true, text: 'Jam / Minggu', font: { size: 10 } } }
+                }
+            }
+        });
+    }
+
+    function drawBebanTinggiTable(data) {
+        bebanAllData = data.filter(d => d.beban_tinggi === 'Ya')
+                           .sort((a, b) => (b.jam_seminggu || 0) - (a.jam_seminggu || 0));
         
-        document.addEventListener('DOMContentLoaded', initApp);
-    </script>
+        document.getElementById('search-beban-tinggi').value = '';
+        bebanFilteredData = [...bebanAllData];
+        bebanCurrentPage = 1;
+        renderBebanTablePage();
+    }
+
+    function renderBebanTablePage() {
+        const tbody = document.getElementById('tbody-beban-tinggi');
+        const empty = document.getElementById('beban-empty');
+        const countEl = document.getElementById('beban-tinggi-count');
+        const pageInfo = document.getElementById('beban-page-info');
+        const prevBtn = document.getElementById('beban-prev');
+        const nextBtn = document.getElementById('beban-next');
+
+        countEl.innerText = `${bebanAllData.length} rekod`;
+
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        if (!bebanFilteredData.length) {
+            empty.classList.remove('hidden');
+            pageInfo.innerText = '0 rekod';
+            prevBtn.disabled = true;
+            nextBtn.disabled = true;
+            return;
+        }
+
+        empty.classList.add('hidden');
+        const totalPages = Math.ceil(bebanFilteredData.length / SUB_PAGE_SIZE);
+        const start = (bebanCurrentPage - 1) * SUB_PAGE_SIZE;
+        const pageItems = bebanFilteredData.slice(start, start + SUB_PAGE_SIZE);
+
+        pageItems.forEach(d => {
+            const tr = document.createElement('tr');
+            tr.className = 'data-tr';
+            tr.innerHTML = `
+                <td class="px-4 py-3 font-medium text-slate-700 max-w-[170px] truncate" title="${d.nama_projek || ''}">${d.nama_projek || '-'}</td>
+                <td class="px-4 py-3 text-slate-500 text-xs leading-tight">${d.nama || '-'}<br><span class="text-slate-400 text-[11px]">${d.unit || '-'}</span></td>
+                <td class="px-4 py-3 text-right font-bold text-red-600">${d.jam_seminggu || 0}</td>`;
+            tbody.appendChild(tr);
+        });
+
+        pageInfo.innerText = `Hal ${bebanCurrentPage}/${totalPages} (${bebanFilteredData.length})`;
+        prevBtn.disabled = bebanCurrentPage <= 1;
+        nextBtn.disabled = bebanCurrentPage >= totalPages;
+    }
+
+    window.changeBebanPage = function(dir) {
+        const total = Math.ceil(bebanFilteredData.length / SUB_PAGE_SIZE);
+        bebanCurrentPage = Math.max(1, Math.min(total, bebanCurrentPage + dir));
+        renderBebanTablePage();
+    };
+
+    function drawSerahTugasTable(data) {
+        const candidates = data.filter(d => d.serah_unit === 'Ya');
+
+        // Intelligently group by project title (case-insensitive & whitespace trimmed)
+        const groupsMap = new Map();
+
+        candidates.forEach(d => {
+            const rawTitle = (d.nama_projek || 'Tiada Nama').trim();
+            const normKey  = rawTitle.toLowerCase();
+
+            if (!groupsMap.has(normKey)) {
+                groupsMap.set(normKey, {
+                    nama_projek: rawTitle,
+                    units: new Set(),
+                    stafList: new Set(),
+                    cadangan: new Set(),
+                    count: 0
+                });
+            }
+
+            const g = groupsMap.get(normKey);
+            if (d.unit) g.units.add(d.unit);
+            if (d.nama) g.stafList.add(d.nama);
+            if (d.cadangan_serah && d.cadangan_serah.trim()) {
+                g.cadangan.add(d.cadangan_serah.trim());
+            }
+            g.count += 1;
+        });
+
+        serahAllData = Array.from(groupsMap.values()).sort((a, b) => b.count - a.count);
+
+        document.getElementById('search-serah-tugas').value = '';
+        serahFilteredData = [...serahAllData];
+        serahCurrentPage = 1;
+        renderSerahTablePage();
+    }
+
+    function renderSerahTablePage() {
+        const tbody = document.getElementById('tbody-serah-tugas');
+        const empty = document.getElementById('serah-empty');
+        const countEl = document.getElementById('serah-tugas-count');
+        const pageInfo = document.getElementById('serah-page-info');
+        const prevBtn = document.getElementById('serah-prev');
+        const nextBtn = document.getElementById('serah-next');
+
+        countEl.innerText = `${serahAllData.length} projek`;
+
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        if (!serahFilteredData.length) {
+            empty.classList.remove('hidden');
+            pageInfo.innerText = '0 projek';
+            prevBtn.disabled = true;
+            nextBtn.disabled = true;
+            return;
+        }
+
+        empty.classList.add('hidden');
+        const totalPages = Math.ceil(serahFilteredData.length / SUB_PAGE_SIZE);
+        const start = (serahCurrentPage - 1) * SUB_PAGE_SIZE;
+        const pageItems = serahFilteredData.slice(start, start + SUB_PAGE_SIZE);
+
+        pageItems.forEach(g => {
+            const tr = document.createElement('tr');
+            tr.className = 'data-tr';
+
+            const unitsArr = Array.from(g.units);
+            const unitsHtml = unitsArr.length > 0 
+                ? unitsArr.map(u => `<span class="inline-block bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded text-[11px] text-slate-600 dark:text-slate-300 mr-1 mb-1">${u}</span>`).join('') 
+                : '<span class="text-slate-400 italic">Tiada Unit</span>';
+
+            const cadanganArr = Array.from(g.cadangan);
+            const cadanganHtml = cadanganArr.length > 0
+                ? cadanganArr.map(c => `<span class="inline-flex items-center gap-1 bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60 px-2 py-0.5 rounded-full text-[11px] font-medium mr-1 mb-1"><i class="fas fa-user-check text-[9px] text-amber-500"></i> ${c}</span>`).join('')
+                : '<span class="text-slate-400 italic font-normal">Tiada cadangan penerima</span>';
+
+            const countBadge = g.count > 1 
+                ? `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200 ml-1.5" title="Digabungkan daripada ${g.count} responden"><i class="fas fa-layer-group text-[9px]"></i> ${g.count} staf</span>`
+                : '';
+
+            const stafSummary = Array.from(g.stafList).slice(0, 3).join(', ') + (g.stafList.size > 3 ? '...' : '');
+
+            tr.innerHTML = `
+                <td class="px-4 py-3 align-top">
+                    <div class="font-bold text-slate-800 dark:text-slate-100 flex items-center flex-wrap">
+                        ${g.nama_projek}
+                        ${countBadge}
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-0.5" title="${Array.from(g.stafList).join(', ')}">Oleh: ${stafSummary || 'Staf'}</p>
+                </td>
+                <td class="px-4 py-3 align-top">${unitsHtml}</td>
+                <td class="px-4 py-3 align-top">${cadanganHtml}</td>`;
+            tbody.appendChild(tr);
+        });
+
+        pageInfo.innerText = `Hal ${serahCurrentPage}/${totalPages} (${serahFilteredData.length})`;
+        prevBtn.disabled = serahCurrentPage <= 1;
+        nextBtn.disabled = serahCurrentPage >= totalPages;
+    }
+
+    window.changeSerahPage = function(dir) {
+        const total = Math.ceil(serahFilteredData.length / SUB_PAGE_SIZE);
+        serahCurrentPage = Math.max(1, Math.min(total, serahCurrentPage + dir));
+        renderSerahTablePage();
+    };
+
+    function drawMainTable(data) {
+        tableAllData      = data;
+        tableFilteredData = [...data];
+        document.getElementById('table-search').value = '';
+        tableCurrentPage  = 1;
+        renderTablePage();
+    }
+
+    function renderTablePage() {
+        const tbody = document.getElementById('main-table-body');
+        const empty = document.getElementById('main-table-empty');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+        if (!tableFilteredData.length) {
+            empty.classList.remove('hidden');
+            document.getElementById('table-page-info').innerText = '0 rekod';
+            document.getElementById('table-prev').disabled = true;
+            document.getElementById('table-next').disabled = true;
+            return;
+        }
+        empty.classList.add('hidden');
+        const totalPages = Math.ceil(tableFilteredData.length / PAGE_SIZE);
+        const start      = (tableCurrentPage - 1) * PAGE_SIZE;
+        tableFilteredData.slice(start, start + PAGE_SIZE).forEach((d, i) => {
+            const tr = document.createElement('tr');
+            tr.className = 'data-tr';
+            const badge  = d.beban_tinggi === 'Ya'
+                ? '<span class="badge badge-red"><i class="fas fa-exclamation-circle"></i>Tinggi</span>'
+                : d.beban_tinggi === 'Tidak'
+                    ? '<span class="badge badge-green"><i class="fas fa-check-circle"></i>Normal</span>'
+                    : '<span class="badge badge-slate">—</span>';
+            tr.innerHTML = `
+                <td class="px-4 py-3 text-slate-400 text-xs">${start + i + 1}</td>
+                <td class="px-4 py-3 font-semibold text-slate-800">${d.nama || '-'}</td>
+                <td class="px-4 py-3 text-slate-500 text-xs">${d.unit || '-'}</td>
+                <td class="px-4 py-3 text-slate-700">${d.nama_projek || '-'}</td>
+                <td class="px-4 py-3 text-slate-500 text-xs">${d.kekerapan || '-'}</td>
+                <td class="px-4 py-3 text-center font-bold text-blue-600">${d.jam_seminggu || 0}</td>
+                <td class="px-4 py-3 text-center">${badge}</td>`;
+            tbody.appendChild(tr);
+        });
+        document.getElementById('table-page-info').innerText  = `Halaman ${tableCurrentPage} / ${totalPages} (${tableFilteredData.length} rekod)`;
+        document.getElementById('table-prev').disabled = tableCurrentPage <= 1;
+        document.getElementById('table-next').disabled = tableCurrentPage >= totalPages;
+    }
+
+    window.changePage = function(dir) {
+        const total  = Math.ceil(tableFilteredData.length / PAGE_SIZE);
+        tableCurrentPage = Math.max(1, Math.min(total, tableCurrentPage + dir));
+        renderTablePage();
+    };
+
+    window.downloadCSV = function() {
+        if (!globalData.length) return showMessage("Tiada data untuk dimuat turun.", true);
+        const fv   = document.getElementById('filter-unit')?.value || '';
+        const rows = fv ? globalData.filter(d => d.unit === fv) : globalData;
+        if (!rows.length) return showMessage("Tiada data untuk saringan ini.", true);
+        const esc     = s => `"${String(s ?? '').replace(/"/g, '""')}"`;
+        const headers = ["Nama","Email","Unit","Nama Portfolio","Tanggungjawab","Impak","Kekerapan","Jam Seminggu","Bulan Sibuk","Jumlah Staf","Beban Tinggi","Penglibatan Agensi","Serah Unit","Cadangan Serah","Tarikh Hantar"];
+        let csv = headers.join(',') + '\n';
+        rows.forEach(d => {
+            csv += [esc(d.nama), esc(d.email), esc(d.unit), esc(d.nama_projek),
+                    esc(Array.isArray(d.tanggungjawab) ? d.tanggungjawab.join(' ; ') : d.tanggungjawab),
+                    esc(Array.isArray(d.impak)         ? d.impak.join(' ; ')         : d.impak),
+                    esc(d.kekerapan), esc(d.jam_seminggu),
+                    esc(Array.isArray(d.bulan_sibuk)   ? d.bulan_sibuk.join(' ; ')   : d.bulan_sibuk),
+                    esc(d.jumlah_staf), esc(d.beban_tinggi), esc(d.penglibatan_agensi),
+                    esc(d.serah_unit), esc(d.cadangan_serah),
+                    esc(d.timestamp ? new Date(d.timestamp.toMillis()).toLocaleDateString('ms-MY') : '')
+                   ].join(',') + '\n';
+        });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = `Analisis_Beban_${fv || 'Semua_Unit'}_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    };
+
+    let currentFontSize = 100;
+    window.changeFontSize = function(action) {
+        if (action === -1 && currentFontSize > 80)  currentFontSize -= 10;
+        if (action ===  1 && currentFontSize < 130) currentFontSize += 10;
+        if (action ===  0) currentFontSize = 100;
+        document.documentElement.style.fontSize = currentFontSize + '%';
+    };
+
+    window.toggleDarkMode = function() {
+        const body = document.body;
+        const icon = document.querySelector('#btn-dark i');
+        const btn  = document.getElementById('btn-dark');
+        body.classList.toggle('dark-mode');
+        if (body.classList.contains('dark-mode')) {
+            icon.classList.replace('fa-moon', 'fa-sun');
+            btn.classList.replace('text-yellow-400', 'text-yellow-200');
+            btn.classList.replace('bg-slate-800', 'bg-slate-600');
+        } else {
+            icon.classList.replace('fa-sun', 'fa-moon');
+            btn.classList.replace('text-yellow-200', 'text-yellow-400');
+            btn.classList.replace('bg-slate-600', 'bg-slate-800');
+        }
+    };
+
+    document.addEventListener('DOMContentLoaded', initApp);
+</script>
 </body>
 </html>
