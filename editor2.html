@@ -494,14 +494,28 @@
                                     <th class="p-2">Unit</th>
                                     <th class="p-2">Portfolio</th>
                                     <th class="p-2 text-center">Jam</th>
-                                    <th class="p-2 text-center">Beban Tinggi</th>
-                                    <th class="p-2">Tanggungjawab</th>
+                                    <th class="p-2">Emel Pengirim</th>
+                                    <th class="p-2 text-center">Status UID</th>
                                 </tr>
                             </thead>
                             <tbody id="preview-table-body" class="divide-y divide-slate-100 dark:divide-slate-700 text-slate-700 dark:text-slate-200">
                                 <!-- Preview rows inserted dynamically -->
                             </tbody>
                         </table>
+                    </div>
+
+                    <!-- Unregistered Email Notice Banner (Dynamically shown if unregistered emails exist) -->
+                    <div id="unregistered-emails-alert" class="hidden p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-xl flex items-start gap-3 text-amber-800 dark:text-amber-300 text-xs">
+                        <i class="fas fa-triangle-exclamation text-base mt-0.5 text-amber-600 dark:text-amber-400 flex-shrink-0"></i>
+                        <div class="flex-1">
+                            <p class="font-bold text-amber-900 dark:text-amber-200">Perhatian: Emel Belum Berdaftar Dikesan</p>
+                            <p class="text-[11px] text-amber-800 dark:text-amber-300/90 mt-0.5 leading-relaxed">
+                                Emel berikut belum mempunyai akaun (UID) dalam pangkalan data. Staf berkenaan <strong class="underline">perlu mendaftar terlebih dahulu</strong> di portal utama (<code class="font-mono bg-amber-100 dark:bg-amber-900/60 px-1 py-0.5 rounded">index.html</code>) supaya portfolio ini dapat dipautkan terus ke paparan "Portfolio Saya" mereka:
+                            </p>
+                            <div id="unregistered-email-list" class="mt-2 flex flex-wrap gap-1.5">
+                                <!-- Tagged unregistered email chips inserted here -->
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Auto-ID Notification banner -->
@@ -574,6 +588,7 @@
     let workingDataMap = new Map();  // id -> edited local state
     let dirtyRecordIds = new Set();  // set of modified record ids
     let deletedRecordIds = new Set();// set of records queued for removal
+    let knownEmailToUidMap = new Map(); // email.toLowerCase() -> uid
     let newRowCounter = 0;
 
     // Constants for Select Dropdowns
@@ -750,6 +765,20 @@
         onSnapshot(colRef, (snapshot) => {
             loadingEl.classList.add('hidden');
             
+            // Rebuild known email -> UID registry from existing database records
+            snapshot.docs.forEach(docSnap => {
+                const data = docSnap.data();
+                const emailKey = (data.email || '').toLowerCase().trim();
+                if (emailKey && data.uid) {
+                    knownEmailToUidMap.set(emailKey, data.uid);
+                }
+            });
+
+            // Ensure current admin UID is mapped
+            if (currentUser?.email && currentUser?.uid) {
+                knownEmailToUidMap.set(currentUser.email.toLowerCase().trim(), currentUser.uid);
+            }
+
             // Only update unmodified rows if admin has uncommitted local edits
             snapshot.docChanges().forEach(change => {
                 const docId = change.doc.id;
@@ -914,11 +943,24 @@
                         placeholder="Contoh: Pegawai Farmasi U48">
                 </td>
 
-                <!-- 11. Emel Pemilik Rekod -->
+                <!-- 11. Emel Pemilik Rekod & Status UID -->
                 <td class="excel-cell text-slate-500 font-mono text-[11px]">
-                    <input type="email" value="${escapeHtml(row.email || '')}" 
-                        onchange="updateCell('${row.id}', 'email', this.value)" 
-                        placeholder="user@moh.gov.my">
+                    <div class="flex flex-col gap-0.5">
+                        <input type="email" value="${escapeHtml(row.email || '')}" 
+                            onchange="updateCell('${row.id}', 'email', this.value)" 
+                            placeholder="user@moh.gov.my">
+                        <div class="mt-0.5">
+                            ${row.uid ? `
+                                <span class="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-sans font-semibold" title="UID: ${row.uid}">
+                                    <i class="fas fa-id-badge text-[11px]"></i> UID Dipautkan
+                                </span>
+                            ` : `
+                                <span class="inline-flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 font-sans font-bold bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.2 rounded border border-amber-200 dark:border-amber-800" title="Emel belum berdaftar di portal utama">
+                                    <i class="fas fa-triangle-exclamation text-[10px]"></i> Perlu Daftar
+                                </span>
+                            `}
+                        </div>
+                    </div>
                 </td>
 
                 <!-- 12. Tanggungjawab (Array Modal Trigger) -->
@@ -960,8 +1002,20 @@
         if (!row) return;
 
         row[fieldName] = newValue;
-        dirtyRecordIds.add(recordId);
 
+        // If email is edited, dynamically re-check known UID mapping
+        if (fieldName === 'email') {
+            const cleanEmail = String(newValue || '').toLowerCase().trim();
+            if (knownEmailToUidMap.has(cleanEmail)) {
+                row.uid = knownEmailToUidMap.get(cleanEmail);
+            } else if (cleanEmail === (currentUser?.email || '').toLowerCase().trim()) {
+                row.uid = currentUser.uid;
+            } else {
+                row.uid = null;
+            }
+        }
+
+        dirtyRecordIds.add(recordId);
         updateChangeStatus();
 
         // Visually update the row without full re-render for performance
@@ -974,6 +1028,7 @@
     window.addNewRow = function() {
         newRowCounter++;
         const tempId = `new_${Date.now()}_${newRowCounter}`;
+        const defaultEmail = currentUser?.email || AUTHORIZED_ADMIN_EMAIL;
         
         const newRecord = {
             id: tempId,
@@ -987,7 +1042,8 @@
             penglibatan_agensi: "Tidak",
             serah_unit: "Tidak",
             cadangan_serah: "",
-            email: currentUser?.email || AUTHORIZED_ADMIN_EMAIL,
+            email: defaultEmail,
+            uid: knownEmailToUidMap.get(defaultEmail.toLowerCase().trim()) || currentUser?.uid || null,
             tanggungjawab: ["Merancang"],
             impak: ["Bahagian"],
             bulan_sibuk: ["Januari"]
@@ -1078,11 +1134,29 @@
             }
 
             // 2. Process updates & new insertions
+            let savedWithoutUidCount = 0;
+
             for (const docId of dirtyRecordIds) {
                 if (deletedRecordIds.has(docId)) continue; // skip if marked for delete
 
                 const row = workingDataMap.get(docId);
                 if (!row) continue;
+
+                const assignedEmail = (row.email || currentUser.email).toLowerCase().trim();
+                const adminEmail = (currentUser.email || '').toLowerCase().trim();
+
+                // Determine correct user UID:
+                // 1) Use existing UID if already mapped on the row
+                // 2) Look up registry of known registered emails
+                // 3) Use admin UID only if assigned email is admin's own email
+                let targetUid = row.uid || knownEmailToUidMap.get(assignedEmail) || null;
+                if (!targetUid && assignedEmail === adminEmail) {
+                    targetUid = currentUser.uid;
+                }
+
+                if (!targetUid) {
+                    savedWithoutUidCount++;
+                }
 
                 const payload = {
                     nama: row.nama || "",
@@ -1095,7 +1169,7 @@
                     penglibatan_agensi: row.penglibatan_agensi || "Tidak",
                     serah_unit: row.serah_unit || "Tidak",
                     cadangan_serah: row.cadangan_serah || "",
-                    email: row.email || currentUser.email,
+                    email: assignedEmail,
                     tanggungjawab: Array.isArray(row.tanggungjawab) ? row.tanggungjawab : [],
                     impak: Array.isArray(row.impak) ? row.impak : [],
                     bulan_sibuk: Array.isArray(row.bulan_sibuk) ? row.bulan_sibuk : [],
@@ -1103,9 +1177,14 @@
                     last_edited_by: currentUser.email
                 };
 
+                // Attach UID only if properly resolved
+                if (targetUid) {
+                    payload.uid = targetUid;
+                }
+
                 if (docId.startsWith('new_')) {
                     const newDocRef = doc(collection(db, "portfolios"));
-                    batch.set(newDocRef, { ...payload, uid: currentUser.uid });
+                    batch.set(newDocRef, payload);
                 } else {
                     const docRef = doc(db, "portfolios", docId);
                     batch.update(docRef, payload);
@@ -1116,7 +1195,12 @@
 
             dirtyRecordIds.clear();
             deletedRecordIds.clear();
-            showToast("Semua data berjaya disimpan ke Firestore!");
+
+            if (savedWithoutUidCount > 0) {
+                showToast(`Data disimpan! (${savedWithoutUidCount} rekod disimpan tanpa UID kerana emel belum berdaftar)`, "warning");
+            } else {
+                showToast("Semua data berjaya disimpan dan dipautkan dengan UID!");
+            }
             updateChangeStatus();
 
         } catch (err) {
@@ -1313,6 +1397,38 @@
         const tbody = document.getElementById('preview-table-body');
         tbody.innerHTML = '';
 
+        const unregisteredEmails = new Set();
+
+        rows.forEach(r => {
+            const cleanEmail = (r.email || '').toLowerCase().trim();
+            const matchedUid = knownEmailToUidMap.get(cleanEmail) || (cleanEmail === (currentUser?.email || '').toLowerCase().trim() ? currentUser.uid : null);
+            if (matchedUid) {
+                r.uid = matchedUid;
+                r.isRegistered = true;
+            } else {
+                r.uid = null;
+                r.isRegistered = false;
+                if (cleanEmail) {
+                    unregisteredEmails.add(cleanEmail);
+                }
+            }
+        });
+
+        // Show/Hide Unregistered Email Notice
+        const alertBox = document.getElementById('unregistered-emails-alert');
+        const alertList = document.getElementById('unregistered-email-list');
+        if (unregisteredEmails.size > 0) {
+            alertBox.classList.remove('hidden');
+            alertList.innerHTML = Array.from(unregisteredEmails).map(em => `
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-mono text-[11px] bg-amber-100 dark:bg-amber-900/60 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 font-bold">
+                    <i class="fas fa-user-xmark text-[10px]"></i> ${escapeHtml(em)}
+                </span>
+            `).join('');
+        } else {
+            alertBox.classList.add('hidden');
+            alertList.innerHTML = '';
+        }
+
         rows.slice(0, 15).forEach((r, idx) => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
@@ -1321,9 +1437,17 @@
                 <td class="p-2 text-slate-500">${escapeHtml(r.unit || '-')}</td>
                 <td class="p-2 font-medium">${escapeHtml(r.nama_projek || '-')}</td>
                 <td class="p-2 text-center font-mono font-bold text-blue-600">${r.jam_seminggu}</td>
-                <td class="p-2 text-center">${r.beban_tinggi === 'Ya' ? '<span class="text-red-600 font-bold">Ya</span>' : 'Tidak'}</td>
-                <td class="p-2 text-slate-500 truncate max-w-[140px]" title="${escapeHtml(r.tanggungjawab.join(', '))}">
-                    ${escapeHtml(r.tanggungjawab.join(', '))}
+                <td class="p-2 font-mono text-[10px] text-slate-600 dark:text-slate-300">${escapeHtml(r.email || '-')}</td>
+                <td class="p-2 text-center">
+                    ${r.isRegistered ? `
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                            <i class="fas fa-check-circle text-[9px]"></i> Berdaftar
+                        </span>
+                    ` : `
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-800 animate-pulse">
+                            <i class="fas fa-circle-exclamation text-[9px]"></i> Belum Daftar
+                        </span>
+                    `}
                 </td>
             `;
             tbody.appendChild(tr);
@@ -1339,8 +1463,18 @@
     }
 
     // Apply parsed rows to working dataset (All auto-assigned with unique IDs)
-    window.applyBulkExcelData = function() {
+    window.applyBulkExcelData = async function() {
         if (!stagedParsedExcelRows.length) return;
+
+        const unregCount = stagedParsedExcelRows.filter(r => !r.isRegistered).length;
+        if (unregCount > 0) {
+            const ok = await askConfirmation(
+                "Emel Belum Berdaftar Dikesan",
+                `Terdapat ${unregCount} baris data yang menggunakan emel belum berdaftar dalam sistem (tiada UID). Rekod ini boleh dimasukkan tetapi staf berkenaan perlu mendaftar akaun di portal utama untuk memautkan UID. Teruskan?`,
+                "Teruskan Masuk"
+            );
+            if (!ok) return;
+        }
 
         let addedCount = 0;
 
@@ -1357,7 +1491,11 @@
         renderTable();
         updateChangeStatus();
 
-        showToast(`Berjaya memuatkan ${addedCount} baris rekod baru dari fail Excel. Sila klik "Simpan Semua Perubahan".`, "warning");
+        if (unregCount > 0) {
+            showToast(`${addedCount} rekod dimasukkan (${unregCount} emel memerlukan pendaftaran staf).`, "warning");
+        } else {
+            showToast(`Berjaya memuatkan ${addedCount} baris rekod baru dengan UID disahkan!`, "success");
+        }
     };
 
     // Download formatted blank Excel Template (.xlsx) without any manual ID column
